@@ -1,0 +1,248 @@
+/* Assignment Viewer Styling */
+.assignment-viewer {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.header h2 {
+  color: white;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.error-message {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.assignments-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.assignments-container h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.no-assignments {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-assignments-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-assignments p {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.no-assignments small {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.assignments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.assignment-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e5e9;
+  transition: all 0.3s ease;
+}
+
+.assignment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.assignment-date {
+  font-weight: 700;
+  color: #333;
+  font-size: 16px;
+}
+
+.assignment-time {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.assignment-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assignment-duration {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.duration-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.assignment-location,
+.assignment-description,
+.assignment-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assignment-location strong,
+.assignment-description strong,
+.assignment-admin strong {
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.assignment-location p,
+.assignment-description p,
+.assignment-admin p {
+  margin: 0;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .assignment-viewer {
+    padding: 15px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .tab-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .assignments-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .assignments-container {
+    padding: 20px;
+  }
+  
+  .assignment-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .assignment-viewer {
+    padding: 10px;
+  }
+  
+  .assignments-container {
+    padding: 15px;
+  }
+  
+  .assignment-card {
+    padding: 15px;
+  }
+  
+  .tab-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+} 
