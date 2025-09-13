@@ -5,7 +5,7 @@ import User from '../../models/userSchema.js';
 import haversine from 'haversine-distance'; // npm install haversine-distance
 
 // CONFIG: allowed location error margin in meters
-const LOCATION_RADIUS_METERS = 100;
+const LOCATION_RADIUS_METERS = 100000;// added area only due to api issues and increased the area to 100000 m
 
 // POST /worker/attendance/start
 export const startAttendance = async (req, res) => {

@@ -5,9 +5,14 @@ import {
   getTodayAssignments,
   getUpcomingAssignments
 } from '../controllers/worker/workerAssignmentController.js';
+import {startAttendance,endAttendance} from '../controllers/worker/attendanceController.js'
 import verifyToken from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
+//Worker geolocation check-in/out
+router.post('/attendance/start',verifyToken,startAttendance);
+router.post('/attendance/end',verifyToken,endAttendance)
+
 
 // Worker assignment routes
 router.get('/assignments', verifyToken, getWorkerAssignments);

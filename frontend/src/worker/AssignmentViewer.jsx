@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './AssignmentViewer.css';
+import api from '../services/api'
 
 const AssignmentViewer = () => {
   const [assignments, setAssignments] = useState([]);
@@ -82,10 +83,81 @@ const AssignmentViewer = () => {
         return `All Assignments (${assignments.length})`;
     }
   };
-
+   
   if (loading) {
     return <div className="loading">Loading your assignments...</div>;
   }
+   // Geolocation + API call for check-in
+  const handleCheckIn = async (assignmentId) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch('http://localhost:5000/api/worker/attendance/start', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              assignmentId,
+              location: { lat: latitude, lng: longitude }
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert(data.message || "Check-in successful!");
+          } else {
+            alert(data.error || "Check-in failed.");
+          }
+        } catch (err) {
+          alert("Check-in failed: " + err.message);
+        }
+      },
+      (err) => alert("Location error: " + err.message)
+    );
+  };
+
+  // Geolocation + API call for check-out
+  const handleCheckOut = async (assignmentId) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch('http://localhost:5000/api/worker/attendance/end', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              assignmentId,
+              location: { lat: latitude, lng: longitude }
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert(data.message || "Check-out successful!");
+          } else {
+            alert(data.error || "Check-out failed.");
+          }
+        } catch (err) {
+          alert("Check-out failed: " + err.message);
+        }
+      },
+      (err) => alert("Location error: " + err.message)
+    );
+  };
 
   return (
     <div className="assignment-viewer">
@@ -126,43 +198,48 @@ const AssignmentViewer = () => {
           </div>
         ) : (
           <div className="assignments-grid">
-            {getCurrentAssignments().map(assignment => (
-              <div key={assignment._id} className="assignment-card">
-                <div className="assignment-header">
-                  <div className="assignment-date">
-                    {formatDate(assignment.date)}
-                  </div>
-                  <div className="assignment-time">
-                    {assignment.timeSlot.start} - {assignment.timeSlot.end}
-                  </div>
-                </div>
-                
-                <div className="assignment-content">
-                  <div className="assignment-duration">
-                    <span className="duration-badge">
-                      {assignment.requiredDurationMinutes} min
-                    </span>
-                  </div>
-                  
-                  <div className="assignment-location">
-                    <strong>📍 Location:</strong>
-                    <p>{assignment.location.latitude}, {assignment.location.longitude}</p>
-                  </div>
-                  
-                  {assignment.description && (
-                    <div className="assignment-description">
-                      <strong>📝 Description:</strong>
-                      <p>{assignment.description}</p>
-                    </div>
-                  )}
-                  
-                  <div className="assignment-admin">
-                    <strong>👤 Assigned by:</strong>
-                    <p>{assignment.assignedBy?.name || 'Admin'}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+           {getCurrentAssignments().map(assignment => (
+  <div key={assignment._id} className="assignment-card">
+    <div className="assignment-header">
+      <div className="assignment-date">
+        {formatDate(assignment.date)}
+      </div>
+      <div className="assignment-time">
+        {assignment.timeSlot.start} - {assignment.timeSlot.end}
+      </div>
+    </div>
+    <div className="assignment-content">
+      <div className="assignment-duration">
+        <span className="duration-badge">
+          {assignment.requiredDurationMinutes} min
+        </span>
+      </div>
+      <div className="assignment-location">
+        <strong>📍 Location:</strong>
+        <p>{assignment.location.lat}, {assignment.location.lng}</p>
+      </div>
+      {assignment.description && (
+        <div className="assignment-description">
+          <strong>📝 Description:</strong>
+          <p>{assignment.description}</p>
+        </div>
+      )}
+      <div className="assignment-admin">
+        <strong>👤 Assigned by:</strong>
+        <p>{assignment.assignedBy?.name || 'Admin'}</p>
+      </div>
+    </div>
+    {/* Move actions inside the card */}
+    <div className="assignment-actions">
+      <button onClick={() => handleCheckIn(assignment._id)}>
+        Check In
+      </button>
+      <button onClick={() => handleCheckOut(assignment._id)}>
+        Check Out
+      </button>
+    </div>
+  </div>
+))}
           </div>
         )}
       </div>

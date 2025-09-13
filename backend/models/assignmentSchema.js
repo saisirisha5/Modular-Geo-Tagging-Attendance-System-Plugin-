@@ -16,8 +16,8 @@ const assignmentSchema = new mongoose.Schema({
     required: true
   },
   location: {
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true }
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true }
   },
   timeSlot: {
     start: { type: String, required: true }, // "HH:MM"

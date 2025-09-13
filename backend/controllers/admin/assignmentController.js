@@ -8,6 +8,10 @@ export const createAssignment = async (req, res) => {
     const { workerId, date, location, timeSlot, requiredDurationMinutes, description } = req.body;
     const adminUserId = req.user.id; // This is the User ID from JWT
 
+    // location: { lat, lng }
+    if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+      return res.status(400).json({ error: "Location (lat/lng) is required" });
+    }
     // Validate required fields
     if (!workerId || !date || !location || !timeSlot) {
       return res.status(400).json({ 

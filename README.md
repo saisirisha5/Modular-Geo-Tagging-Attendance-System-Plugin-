@@ -13,9 +13,9 @@
 - [x] **User login** – JWT-based authentication
 - [x] **Admin assigns location + schedule** – lat/lon + time range
 - [x] **Counsellor/Worker fetches today’s assignment**
-- [ ] **Geolocation API** – Check if user is within 100–200m radius of assigned location
-- [ ] **Attendance check-in/out** – Triggered by live GPS position
-- [ ] **Store entry/exit times** and compute total duration
+- [x] **Geolocation API** – Check if user is within 100–200m radius of assigned location
+- [x] **Attendance check-in/out** – Triggered by live GPS position
+- [x] **Store entry/exit times** and compute total duration
 - [ ] **Admin dashboard** to view:
   - Who checked in/out
   - Whether duration is valid

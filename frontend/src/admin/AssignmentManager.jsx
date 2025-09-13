@@ -11,11 +11,13 @@ const AssignmentManager = () => {
   const [formData, setFormData] = useState({
     workerId: '',
     date: '',
+    address: '',
     location: { latitude: '', longitude: '' },
     timeSlot: { start: '', end: '' },
     requiredDurationMinutes: '',
     description: ''
   });
+  const [fetchingLocation, setFetchingLocation] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -41,31 +43,61 @@ const AssignmentManager = () => {
       const assignmentsData = await assignmentsRes.json();
 
       if (workersRes.ok) {
-        console.log('Workers data:', workersData);
         setWorkers(workersData.workers);
       } else {
-        console.error('Workers fetch failed:', workersData);
         setError(`Failed to fetch workers: ${workersData.error || 'Unknown error'}`);
       }
       
       if (assignmentsRes.ok) {
         setAssignments(assignmentsData.assignments);
-      } else {
-        console.error('Assignments fetch failed:', assignmentsData);
       }
     } catch (err) {
-      console.error('Fetch error:', err);
       setError('Failed to fetch data');
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch lat/lng from OpenStreetMap Nominatim
+  const fetchLatLng = async (address) => {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data && data.length > 0) {
+      return {
+        latitude: data[0].lat,
+        longitude: data[0].lon
+      };
+    }
+    throw new Error("Location not found");
+  };
+
+  const handleFetchLocation = async () => {
+    if (!formData.address) {
+      alert("Please enter an address first.");
+      return;
+    }
+    setFetchingLocation(true);
+    try {
+      const loc = await fetchLatLng(formData.address);
+      setFormData({
+        ...formData,
+        location: {
+          latitude: loc.latitude,
+          longitude: loc.longitude
+        }
+      });
+      alert(`Location found: ${loc.latitude}, ${loc.longitude}`);
+    } catch (err) {
+      alert("Could not fetch location: " + err.message);
+    } finally {
+      setFetchingLocation(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Submitting assignment data:', formData);
-      
       const response = await fetch('http://localhost:5000/api/admin/assign', {
         method: 'POST',
         headers: {
@@ -73,23 +105,26 @@ const AssignmentManager = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          ...formData,
+          workerId: formData.workerId,
+          date: formData.date,
           location: {
-            latitude: parseFloat(formData.location.latitude),
-            longitude: parseFloat(formData.location.longitude)
+            lat: parseFloat(formData.location.latitude),
+            lng: parseFloat(formData.location.longitude)
           },
-          requiredDurationMinutes: parseInt(formData.requiredDurationMinutes)
+          timeSlot: formData.timeSlot,
+          requiredDurationMinutes: parseInt(formData.requiredDurationMinutes),
+          description: formData.description
         })
       });
 
       const responseData = await response.json();
-      console.log('Assignment creation response:', responseData);
 
       if (response.ok) {
         setShowCreateForm(false);
         setFormData({
           workerId: '',
           date: '',
+          address: '',
           location: { latitude: '', longitude: '' },
           timeSlot: { start: '', end: '' },
           requiredDurationMinutes: '',
@@ -100,7 +135,6 @@ const AssignmentManager = () => {
         setError(responseData.error || 'Failed to create assignment');
       }
     } catch (err) {
-      console.error('Submit error:', err);
       setError('Network error');
     }
   };
@@ -144,16 +178,15 @@ const AssignmentManager = () => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {/* Debug info - remove this later */}
       <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px', marginBottom: '20px', borderRadius: '8px', color: 'white' }}>
         <strong>Debug Info:</strong> Found {workers.length} workers
         {workers.length > 0 && (
           <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                         {workers.map(worker => (
-               <li key={worker.id}>
-                 {worker.name || 'Unknown Worker'} ({worker.email}) - ID: {worker.id}
-               </li>
-             ))}
+            {workers.map(worker => (
+              <li key={worker.id}>
+                {worker.name || 'Unknown Worker'} ({worker.email}) - ID: {worker.id}
+              </li>
+            ))}
           </ul>
         )}
       </div>
@@ -171,11 +204,11 @@ const AssignmentManager = () => {
                   required
                 >
                   <option value="">Select Worker</option>
-                                     {workers.map(worker => (
-                     <option key={worker.id} value={worker.id}>
-                       {worker.name || 'Unknown Worker'} ({worker.email})
-                     </option>
-                   ))}
+                  {workers.map(worker => (
+                    <option key={worker.id} value={worker.id}>
+                      {worker.name || 'Unknown Worker'} ({worker.email})
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="form-group">
@@ -217,31 +250,47 @@ const AssignmentManager = () => {
             </div>
 
             <div className="form-row">
+              <div className="form-group" style={{ flex: 2 }}>
+                <label>Address</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  placeholder="Enter address (e.g. 1600 Amphitheatre Parkway, Mountain View, CA)"
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>&nbsp;</label>
+                <button
+                  type="button"
+                  onClick={handleFetchLocation}
+                  disabled={fetchingLocation || !formData.address}
+                  style={{ width: '100%' }}
+                >
+                  {fetchingLocation ? "Fetching..." : "Fetch Location"}
+                </button>
+              </div>
+            </div>
+
+            <div className="form-row">
               <div className="form-group">
                 <label>Latitude</label>
                 <input
-                  type="number"
-                  step="any"
+                  type="text"
                   value={formData.location.latitude}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    location: {...formData.location, latitude: e.target.value}
-                  })}
-                  placeholder="40.7128"
+                  readOnly
+                  placeholder="Latitude"
                   required
                 />
               </div>
               <div className="form-group">
                 <label>Longitude</label>
                 <input
-                  type="number"
-                  step="any"
+                  type="text"
                   value={formData.location.longitude}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    location: {...formData.location, longitude: e.target.value}
-                  })}
-                  placeholder="-74.0060"
+                  readOnly
+                  placeholder="Longitude"
                   required
                 />
               </div>
@@ -297,7 +346,7 @@ const AssignmentManager = () => {
                   <p><strong>Date:</strong> {assignment.date}</p>
                   <p><strong>Time:</strong> {assignment.timeSlot.start} - {assignment.timeSlot.end}</p>
                   <p><strong>Duration:</strong> {assignment.requiredDurationMinutes} minutes</p>
-                  <p><strong>Location:</strong> {assignment.location.latitude}, {assignment.location.longitude}</p>
+                  <p><strong>Location:</strong> {assignment.location.lat || assignment.location.latitude}, {assignment.location.lng || assignment.location.longitude}</p>
                   {assignment.description && (
                     <p><strong>Description:</strong> {assignment.description}</p>
                   )}
@@ -311,4 +360,4 @@ const AssignmentManager = () => {
   );
 };
 
-export default AssignmentManager; 
+export default AssignmentManager;
