@@ -1,43 +1,48 @@
+// backend/admin/AssignmentController.js
 import Assignment from '../../models/assignmentSchema.js';
 import WorkerProfile from '../../models/workerProfile.js';
 import User from '../../models/userSchema.js';
 
-// POST /admin/assign - Create assignment for a worker
+// ==========================
+// POST /admin/assign
+// Create assignment for a worker
+// ==========================
 export const createAssignment = async (req, res) => {
   try {
     const { workerId, date, location, timeSlot, requiredDurationMinutes, description } = req.body;
     const adminUserId = req.user.id; // This is the User ID from JWT
 
-    // location: { lat, lng }
-    if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
-      return res.status(400).json({ error: "Location (lat/lng) is required" });
-    }
     // Validate required fields
     if (!workerId || !date || !location || !timeSlot) {
-      return res.status(400).json({ 
-        error: "Missing required fields: workerId, date, location, timeSlot" 
+      return res.status(400).json({
+        error: "Missing required fields: workerId, date, location, timeSlot"
       });
     }
 
-    // Get admin user and their profile
+    // location must have lat/lng
+    if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+      return res.status(400).json({ error: "Location (lat/lng) is required" });
+    }
+
+    // Verify admin role
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: "Access denied. Admin role required." });
     }
 
-    // Validate worker exists and is actually a worker
+    // Validate worker exists and is a worker
     const workerUser = await User.findById(workerId);
     if (!workerUser || workerUser.role !== 'worker') {
       return res.status(404).json({ error: "Worker not found" });
     }
 
-    // Get worker profile
+    // Ensure worker has a profile
     const workerProfile = await WorkerProfile.findById(workerUser.profile);
     if (!workerProfile) {
       return res.status(404).json({ error: "Worker profile not found" });
     }
 
-    // Check for duplicate assignment on the same date and time
+    // Check for duplicate assignment overlap
     const existingAssignment = await Assignment.findOne({
       worker: workerUser.profile,
       date,
@@ -50,15 +55,15 @@ export const createAssignment = async (req, res) => {
     });
 
     if (existingAssignment) {
-      return res.status(400).json({ 
-        error: "Worker already has an assignment during this time slot" 
+      return res.status(400).json({
+        error: "Worker already has an assignment during this time slot"
       });
     }
 
-    // Create assignment
+    // Create new assignment
     const assignment = new Assignment({
-      worker: workerUser.profile, // Use the worker's profile ID
-      assignedBy: adminUser.profile, // Use the admin's profile ID
+      worker: workerUser.profile,          // worker’s profile ID
+      assignedBy: adminUser.profile,       // admin’s profile ID
       date,
       location,
       timeSlot,
@@ -69,11 +74,11 @@ export const createAssignment = async (req, res) => {
     await assignment.save();
 
     // Populate worker details for response
-    await assignment.populate('worker', 'name email');
+    await assignment.populate('worker', 'name');
 
-    res.status(201).json({ 
-      message: "Assignment created successfully", 
-      assignment 
+    res.status(201).json({
+      message: "Assignment created successfully",
+      assignment
     });
   } catch (err) {
     console.error("Assignment Error:", err);
@@ -81,19 +86,21 @@ export const createAssignment = async (req, res) => {
   }
 };
 
-// GET /admin/assignments - Get all assignments created by admin
+// ==========================
+// GET /admin/assignments
+// Get all assignments created by admin
+// ==========================
 export const getAllAssignmentsByAdmin = async (req, res) => {
   try {
     const adminUserId = req.user.id;
 
-    // Get admin user and their profile
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: "Access denied. Admin role required." });
     }
 
     const assignments = await Assignment.find({ assignedBy: adminUser.profile })
-      .populate('worker', 'name email')
+      .populate('worker', 'name')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -107,37 +114,33 @@ export const getAllAssignmentsByAdmin = async (req, res) => {
   }
 };
 
-// GET /admin/workers - Get all available workers for assignment
+// ==========================
+// GET /admin/workers
+// Get all workers for dropdown
+// ==========================
 export const getAllWorkers = async (req, res) => {
   try {
     const adminUserId = req.user.id;
 
-    // Verify admin role
+    // Verify admin
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: "Access denied. Admin role required." });
     }
 
-    // Get all workers with their profiles
+    // Get all workers
     const workers = await User.find({ role: 'worker' })
-      .populate('profile', 'name email assignedLocation')
-      .select('email profile');
+  .populate({ path: 'profile', model: 'WorkerProfile', select: 'name assignedLocation createdAt' })
+  .select('email profile');
 
-    console.log('Raw workers data:', JSON.stringify(workers, null, 2));
 
-    const formattedWorkers = workers.map(worker => {
-      console.log('Processing worker:', worker._id, 'Profile:', worker.profile);
-      
-      return {
-        id: worker._id,
-        email: worker.email,
-        name: worker.profile?.name || 'Unknown Worker',
-        assignedLocation: worker.profile?.assignedLocation || null,
-        createdAt: worker.profile?.createdAt || null
-      };
-    });
-
-    console.log('Formatted workers:', formattedWorkers);
+    const formattedWorkers = workers.map(worker => ({
+      id: worker._id,
+      email: worker.email,   // always from User
+      name: worker.profile?.name || 'Unknown Worker',
+      assignedLocation: worker.profile?.assignedLocation || null,
+      createdAt: worker.profile?.createdAt || null
+    }));
 
     res.status(200).json({
       message: "Workers retrieved successfully",
@@ -150,27 +153,28 @@ export const getAllWorkers = async (req, res) => {
   }
 };
 
-// GET /admin/assignments/:id - Get specific assignment details
+// ==========================
+// GET /admin/assignments/:id
+// Get single assignment
+// ==========================
 export const getAssignmentById = async (req, res) => {
   try {
     const { id } = req.params;
     const adminUserId = req.user.id;
 
-    // Verify admin role
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: "Access denied. Admin role required." });
     }
 
     const assignment = await Assignment.findById(id)
-      .populate('worker', 'name email assignedLocation')
+      .populate('worker', 'name assignedLocation')
       .populate('assignedBy', 'name');
 
     if (!assignment) {
       return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Check if admin owns this assignment
     if (assignment.assignedBy._id.toString() !== adminUser.profile.toString()) {
       return res.status(403).json({ error: "Access denied. You can only view your own assignments." });
     }
@@ -185,14 +189,16 @@ export const getAssignmentById = async (req, res) => {
   }
 };
 
-// PUT /admin/assignments/:id - Update assignment
+// ==========================
+// PUT /admin/assignments/:id
+// Update assignment
+// ==========================
 export const updateAssignment = async (req, res) => {
   try {
     const { id } = req.params;
     const { date, location, timeSlot, requiredDurationMinutes, description } = req.body;
     const adminUserId = req.user.id;
 
-    // Verify admin role
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: "Access denied. Admin role required." });
@@ -203,7 +209,6 @@ export const updateAssignment = async (req, res) => {
       return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Check if admin owns this assignment
     if (assignment.assignedBy.toString() !== adminUser.profile.toString()) {
       return res.status(403).json({ error: "Access denied. You can only update your own assignments." });
     }
@@ -214,7 +219,7 @@ export const updateAssignment = async (req, res) => {
       const newTimeSlot = timeSlot || assignment.timeSlot;
 
       const existingAssignment = await Assignment.findOne({
-        _id: { $ne: id }, // Exclude current assignment
+        _id: { $ne: id },
         worker: assignment.worker,
         date: newDate,
         $or: [
@@ -226,24 +231,28 @@ export const updateAssignment = async (req, res) => {
       });
 
       if (existingAssignment) {
-        return res.status(400).json({ 
-          error: "Worker already has an assignment during this time slot" 
+        return res.status(400).json({
+          error: "Worker already has an assignment during this time slot"
         });
       }
     }
 
-    // Update assignment
+    // Apply updates
     const updatedAssignment = await Assignment.findByIdAndUpdate(
       id,
       {
         date: date || assignment.date,
         location: location || assignment.location,
         timeSlot: timeSlot || assignment.timeSlot,
-        requiredDurationMinutes: requiredDurationMinutes !== undefined ? requiredDurationMinutes : assignment.requiredDurationMinutes,
-        description: description !== undefined ? description : assignment.description
+        requiredDurationMinutes: requiredDurationMinutes !== undefined
+          ? requiredDurationMinutes
+          : assignment.requiredDurationMinutes,
+        description: description !== undefined
+          ? description
+          : assignment.description
       },
       { new: true }
-    ).populate('worker', 'name email');
+    ).populate('worker', 'name');
 
     res.status(200).json({
       message: "Assignment updated successfully",
@@ -255,13 +264,15 @@ export const updateAssignment = async (req, res) => {
   }
 };
 
-// DELETE /admin/assignments/:id - Delete assignment
+// ==========================
+// DELETE /admin/assignments/:id
+// Delete assignment
+// ==========================
 export const deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params;
     const adminUserId = req.user.id;
 
-    // Verify admin role
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: "Access denied. Admin role required." });
@@ -272,19 +283,15 @@ export const deleteAssignment = async (req, res) => {
       return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Check if admin owns this assignment
     if (assignment.assignedBy.toString() !== adminUser.profile.toString()) {
       return res.status(403).json({ error: "Access denied. You can only delete your own assignments." });
     }
 
     await Assignment.findByIdAndDelete(id);
 
-    res.status(200).json({
-      message: "Assignment deleted successfully"
-    });
+    res.status(200).json({ message: "Assignment deleted successfully" });
   } catch (err) {
     console.error("Assignment Delete Error:", err);
     res.status(500).json({ error: "Failed to delete assignment", details: err.message });
   }
 };
-

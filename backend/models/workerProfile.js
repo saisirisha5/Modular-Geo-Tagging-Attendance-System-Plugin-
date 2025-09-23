@@ -5,10 +5,6 @@ const workerProfile = new mongoose.Schema({
     type: String,
     required: true
   },
- email:{
-   type : String,
-   required : false
- },
   assignedLocation: {
     lat: { type: Number },
     lng: { type: Number }

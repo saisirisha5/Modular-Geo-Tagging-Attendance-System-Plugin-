@@ -1,6 +1,7 @@
+// worker/AssignmentViewer.jsx
 import { useState, useEffect } from 'react';
 import './AssignmentViewer.css';
-import api from '../services/api'
+import apiService from '../services/api';
 
 const AssignmentViewer = () => {
   const [assignments, setAssignments] = useState([]);
@@ -17,34 +18,15 @@ const AssignmentViewer = () => {
   const fetchAssignments = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const [allRes, todayRes, upcomingRes] = await Promise.all([
-        fetch('http://localhost:5000/api/worker/assignments', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:5000/api/worker/assignments/today', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:5000/api/worker/assignments/upcoming', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+      const [allData, todayData, upcomingData] = await Promise.all([
+        apiService.makeRequest('/worker/assignments'),
+        apiService.makeRequest('/worker/assignments/today'),
+        apiService.makeRequest('/worker/assignments/upcoming'),
       ]);
 
-      if (allRes.ok) {
-        const allData = await allRes.json();
-        setAssignments(allData.assignments);
-      }
-      
-      if (todayRes.ok) {
-        const todayData = await todayRes.json();
-        setTodayAssignments(todayData.assignments);
-      }
-      
-      if (upcomingRes.ok) {
-        const upcomingData = await upcomingRes.json();
-        setUpcomingAssignments(upcomingData.assignments);
-      }
+      setAssignments(allData.assignments || []);
+      setTodayAssignments(todayData.assignments || []);
+      setUpcomingAssignments(upcomingData.assignments || []);
     } catch (err) {
       setError('Failed to fetch assignments');
     } finally {
@@ -58,63 +40,42 @@ const AssignmentViewer = () => {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getCurrentAssignments = () => {
     switch (activeTab) {
-      case 'today':
-        return todayAssignments;
-      case 'upcoming':
-        return upcomingAssignments;
-      default:
-        return assignments;
+      case 'today': return todayAssignments;
+      case 'upcoming': return upcomingAssignments;
+      default: return assignments;
     }
   };
 
   const getTabTitle = () => {
     switch (activeTab) {
-      case 'today':
-        return `Today's Assignments (${todayAssignments.length})`;
-      case 'upcoming':
-        return `Upcoming Assignments (${upcomingAssignments.length})`;
-      default:
-        return `All Assignments (${assignments.length})`;
+      case 'today': return `Today's Assignments (${todayAssignments.length})`;
+      case 'upcoming': return `Upcoming Assignments (${upcomingAssignments.length})`;
+      default: return `All Assignments (${assignments.length})`;
     }
   };
-   
-  if (loading) {
-    return <div className="loading">Loading your assignments...</div>;
-  }
-   // Geolocation + API call for check-in
+
+  // -------------------------
+  // Check-In / Check-Out
+  // -------------------------
   const handleCheckIn = async (assignmentId) => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
+      async ({ coords }) => {
         try {
-          const token = localStorage.getItem('token');
-          const res = await fetch('http://localhost:5000/api/worker/attendance/start', {
+          const data = await apiService.makeRequest('/worker/attendance/start', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              assignmentId,
-              location: { lat: latitude, lng: longitude }
-            })
+            data: { assignmentId, location: { lat: coords.latitude, lng: coords.longitude } },
           });
-          const data = await res.json();
-          if (res.ok) {
-            alert(data.message || "Check-in successful!");
-          } else {
-            alert(data.error || "Check-in failed.");
-          }
+          alert(data.message || "Check-in successful!");
         } catch (err) {
           alert("Check-in failed: " + err.message);
         }
@@ -123,34 +84,19 @@ const AssignmentViewer = () => {
     );
   };
 
-  // Geolocation + API call for check-out
   const handleCheckOut = async (assignmentId) => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
+      async ({ coords }) => {
         try {
-          const token = localStorage.getItem('token');
-          const res = await fetch('http://localhost:5000/api/worker/attendance/end', {
+          const data = await apiService.makeRequest('/worker/attendance/end', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              assignmentId,
-              location: { lat: latitude, lng: longitude }
-            })
+            data: { assignmentId, location: { lat: coords.latitude, lng: coords.longitude } },
           });
-          const data = await res.json();
-          if (res.ok) {
-            alert(data.message || "Check-out successful!");
-          } else {
-            alert(data.error || "Check-out failed.");
-          }
+          alert(data.message || "Check-out successful!");
         } catch (err) {
           alert("Check-out failed: " + err.message);
         }
@@ -159,27 +105,22 @@ const AssignmentViewer = () => {
     );
   };
 
+  if (loading) {
+    return <div className="loading">Loading your assignments...</div>;
+  }
+
   return (
     <div className="assignment-viewer">
       <div className="header">
         <h2>My Assignments</h2>
         <div className="tab-buttons">
-          <button 
-            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
+          <button className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
             All ({assignments.length})
           </button>
-          <button 
-            className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`}
-            onClick={() => setActiveTab('today')}
-          >
+          <button className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`} onClick={() => setActiveTab('today')}>
             Today ({todayAssignments.length})
           </button>
-          <button 
-            className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upcoming')}
-          >
+          <button className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`} onClick={() => setActiveTab('upcoming')}>
             Upcoming ({upcomingAssignments.length})
           </button>
         </div>
@@ -189,7 +130,6 @@ const AssignmentViewer = () => {
 
       <div className="assignments-container">
         <h3>{getTabTitle()}</h3>
-        
         {getCurrentAssignments().length === 0 ? (
           <div className="no-assignments">
             <div className="no-assignments-icon">📋</div>
@@ -198,48 +138,39 @@ const AssignmentViewer = () => {
           </div>
         ) : (
           <div className="assignments-grid">
-           {getCurrentAssignments().map(assignment => (
-  <div key={assignment._id} className="assignment-card">
-    <div className="assignment-header">
-      <div className="assignment-date">
-        {formatDate(assignment.date)}
-      </div>
-      <div className="assignment-time">
-        {assignment.timeSlot.start} - {assignment.timeSlot.end}
-      </div>
-    </div>
-    <div className="assignment-content">
-      <div className="assignment-duration">
-        <span className="duration-badge">
-          {assignment.requiredDurationMinutes} min
-        </span>
-      </div>
-      <div className="assignment-location">
-        <strong>📍 Location:</strong>
-        <p>{assignment.location.lat}, {assignment.location.lng}</p>
-      </div>
-      {assignment.description && (
-        <div className="assignment-description">
-          <strong>📝 Description:</strong>
-          <p>{assignment.description}</p>
-        </div>
-      )}
-      <div className="assignment-admin">
-        <strong>👤 Assigned by:</strong>
-        <p>{assignment.assignedBy?.name || 'Admin'}</p>
-      </div>
-    </div>
-    {/* Move actions inside the card */}
-    <div className="assignment-actions">
-      <button onClick={() => handleCheckIn(assignment._id)}>
-        Check In
-      </button>
-      <button onClick={() => handleCheckOut(assignment._id)}>
-        Check Out
-      </button>
-    </div>
-  </div>
-))}
+            {getCurrentAssignments().map((assignment) => (
+              <div key={assignment._id} className="assignment-card">
+                <div className="assignment-header">
+                  <div className="assignment-date">{formatDate(assignment.date)}</div>
+                  <div className="assignment-time">
+                    {assignment.timeSlot.start} - {assignment.timeSlot.end}
+                  </div>
+                </div>
+                <div className="assignment-content">
+                  <div className="assignment-duration">
+                    <span className="duration-badge">{assignment.requiredDurationMinutes} min</span>
+                  </div>
+                  <div className="assignment-location">
+                    <strong>📍 Location:</strong>
+                    <p>{assignment.location.lat}, {assignment.location.lng}</p>
+                  </div>
+                  {assignment.description && (
+                    <div className="assignment-description">
+                      <strong>📝 Description:</strong>
+                      <p>{assignment.description}</p>
+                    </div>
+                  )}
+                  <div className="assignment-admin">
+                    <strong>👤 Assigned by:</strong>
+                    <p>{assignment.assignedBy?.name || 'Admin'}</p>
+                  </div>
+                </div>
+                <div className="assignment-actions">
+                  <button onClick={() => handleCheckIn(assignment._id)}>Check In</button>
+                  <button onClick={() => handleCheckOut(assignment._id)}>Check Out</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -247,4 +178,4 @@ const AssignmentViewer = () => {
   );
 };
 
-export default AssignmentViewer; 
+export default AssignmentViewer;

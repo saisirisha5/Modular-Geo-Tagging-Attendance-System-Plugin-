@@ -246,3 +246,52 @@
     font-size: 13px;
   }
 } 
+.assignment-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.assignment-actions button {
+  flex: 1;
+  padding: 10px 0;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Check-In Button */
+.assignment-actions button:first-child {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+}
+
+.assignment-actions button:first-child:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(56, 249, 215, 0.4);
+}
+
+/* Check-Out Button */
+.assignment-actions button:last-child {
+  background: linear-gradient(135deg, #f77062, #fe5196);
+}
+
+.assignment-actions button:last-child:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(254, 81, 150, 0.4);
+}
+
+/* Optional: add a subtle pulse animation when hovering over both */
+.assignment-actions button:hover {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1) translateY(-2px); }
+  50% { transform: scale(1.03) translateY(-2px); }
+  100% { transform: scale(1) translateY(-2px); }
+}

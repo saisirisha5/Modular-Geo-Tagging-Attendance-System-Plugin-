@@ -1,63 +1,62 @@
-// API Service for authentication
+// services/apiService.js
+import axios from 'axios';
+
 const API_BASE_URL = 'http://localhost:5000/api';
 
 class ApiService {
-  // Helper method to make API calls
   async makeRequest(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    
-    const defaultOptions = {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
     };
 
     // Add authorization header if token exists
     const token = localStorage.getItem('token');
     if (token) {
-      defaultOptions.headers.Authorization = `Bearer ${token}`;
+      defaultHeaders.Authorization = `Bearer ${token}`;
     }
 
-    const finalOptions = {
-      ...defaultOptions,
-      ...options,
-      headers: {
-        ...defaultOptions.headers,
-        ...options.headers,
-      },
-    };
-
     try {
-      const response = await fetch(url, finalOptions);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
+      const response = await axios({
+        url,
+        method: options.method || 'GET',
+        headers: { ...defaultHeaders, ...options.headers },
+        data: options.data || null,
+      });
+      return response.data;
     } catch (error) {
       console.error('API Request failed:', error);
-      throw error;
+      if (error.response) {
+        throw new Error(
+          error.response.data.message ||
+          `HTTP error! status: ${error.response.status}`
+        );
+      }
+      throw new Error(error.message);
     }
   }
 
+  // -------------------------
   // Authentication methods
+  // -------------------------
   async login(email, password) {
     return this.makeRequest('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      data: { email, password },
     });
   }
 
   async signup(name, email, password, role) {
     return this.makeRequest('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, role }),
+      data: { name, email, password, role },
     });
   }
 
-  // User session methods
+  // -------------------------
+  // Session helpers
+  // -------------------------
   setUserSession(token, user) {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
@@ -66,15 +65,7 @@ class ApiService {
   getUserSession() {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    
-    if (token && user) {
-      return {
-        token,
-        user: JSON.parse(user),
-      };
-    }
-    
-    return null;
+    return token && user ? { token, user: JSON.parse(user) } : null;
   }
 
   clearUserSession() {
@@ -88,13 +79,37 @@ class ApiService {
 
   getUserRole() {
     const user = localStorage.getItem('user');
-    if (user) {
-      return JSON.parse(user).role;
-    }
-    return null;
+    return user ? JSON.parse(user).role : null;
   }
+
+  // -------------------------
+// Admin methods
+// -------------------------
+
+  async getWorkers() {
+    return this.makeRequest('/admin/workers');
+  }
+
+  async getAssignments() {
+    return this.makeRequest('/admin/assignments');
+  }
+
+  async createAssignment(data) {
+    return this.makeRequest('/admin/assign', {
+      method: 'POST',
+      data,
+    });
+  }
+
+  async deleteAssignment(id) {
+    return this.makeRequest(`/admin/assignments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
 }
 
-// Create and export a singleton instance
+
+
 const apiService = new ApiService();
-export default apiService; 
+export default apiService;

@@ -26,39 +26,21 @@ const AssignmentManager = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [workersRes, assignmentsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/admin/workers', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }),
-        fetch('http://localhost:5000/api/admin/assignments', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        })
+      const [workersData, assignmentsData] = await Promise.all([
+        apiService.getWorkers(),
+        apiService.getAssignments(),
       ]);
 
-      const workersData = await workersRes.json();
-      const assignmentsData = await assignmentsRes.json();
-
-      if (workersRes.ok) {
-        setWorkers(workersData.workers);
-      } else {
-        setError(`Failed to fetch workers: ${workersData.error || 'Unknown error'}`);
-      }
-      
-      if (assignmentsRes.ok) {
-        setAssignments(assignmentsData.assignments);
-      }
+      setWorkers(workersData.workers || []);
+      setAssignments(assignmentsData.assignments || []);
     } catch (err) {
-      setError('Failed to fetch data');
+      setError(err.message || 'Failed to fetch data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch lat/lng from OpenStreetMap Nominatim
+  // Fetch lat/lng from OpenStreetMap Nominatim (unchanged)
   const fetchLatLng = async (address) => {
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
     const res = await fetch(url);
@@ -98,44 +80,31 @@ const AssignmentManager = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/admin/assign', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      await apiService.createAssignment({
+        workerId: formData.workerId,
+        date: formData.date,
+        location: {
+          lat: parseFloat(formData.location.latitude),
+          lng: parseFloat(formData.location.longitude)
         },
-        body: JSON.stringify({
-          workerId: formData.workerId,
-          date: formData.date,
-          location: {
-            lat: parseFloat(formData.location.latitude),
-            lng: parseFloat(formData.location.longitude)
-          },
-          timeSlot: formData.timeSlot,
-          requiredDurationMinutes: parseInt(formData.requiredDurationMinutes),
-          description: formData.description
-        })
+        timeSlot: formData.timeSlot,
+        requiredDurationMinutes: parseInt(formData.requiredDurationMinutes),
+        description: formData.description,
       });
 
-      const responseData = await response.json();
-
-      if (response.ok) {
-        setShowCreateForm(false);
-        setFormData({
-          workerId: '',
-          date: '',
-          address: '',
-          location: { latitude: '', longitude: '' },
-          timeSlot: { start: '', end: '' },
-          requiredDurationMinutes: '',
-          description: ''
-        });
-        fetchData(); // Refresh data
-      } else {
-        setError(responseData.error || 'Failed to create assignment');
-      }
+      setShowCreateForm(false);
+      setFormData({
+        workerId: '',
+        date: '',
+        address: '',
+        location: { latitude: '', longitude: '' },
+        timeSlot: { start: '', end: '' },
+        requiredDurationMinutes: '',
+        description: ''
+      });
+      fetchData();
     } catch (err) {
-      setError('Network error');
+      setError(err.message || 'Failed to create assignment');
     }
   };
 
@@ -143,22 +112,13 @@ const AssignmentManager = () => {
     if (!window.confirm('Are you sure you want to delete this assignment?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/assignments/${assignmentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        fetchData(); // Refresh data
-      } else {
-        setError('Failed to delete assignment');
-      }
+      await apiService.deleteAssignment(assignmentId);
+      fetchData();
     } catch (err) {
-      setError('Network error');
+      setError(err.message || 'Failed to delete assignment');
     }
   };
+
 
   if (loading) {
     return <div className="loading">Loading assignments...</div>;
@@ -178,7 +138,7 @@ const AssignmentManager = () => {
 
       {error && <div className="error-message">{error}</div>}
 
-      <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px', marginBottom: '20px', borderRadius: '8px', color: 'white' }}>
+      {/* <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px', marginBottom: '20px', borderRadius: '8px', color: 'white' }}>
         <strong>Debug Info:</strong> Found {workers.length} workers
         {workers.length > 0 && (
           <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
@@ -189,7 +149,7 @@ const AssignmentManager = () => {
             ))}
           </ul>
         )}
-      </div>
+      </div> */}
 
       {showCreateForm && (
         <div className="create-form">

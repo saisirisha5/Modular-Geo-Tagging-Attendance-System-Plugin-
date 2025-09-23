@@ -8,24 +8,24 @@ const WorkerHomepage = () => {
   const [currentView, setCurrentView] = useState('dashboard');
 
   useEffect(() => {
-    // Get user session from API service
     const session = apiService.getUserSession();
     if (session) {
       setUser(session.user);
     } else {
-      // Redirect to login if no user session
-      window.navigateToPage ? window.navigateToPage('login') : window.location.href = '/login';
+      window.navigateToPage
+        ? window.navigateToPage('login')
+        : (window.location.href = '/login');
     }
   }, []);
 
   const handleLogout = () => {
     apiService.clearUserSession();
-    window.navigateToPage ? window.navigateToPage('login') : window.location.href = '/login';
+    window.navigateToPage
+      ? window.navigateToPage('login')
+      : (window.location.href = '/login');
   };
 
-  if (!user) {
-    return <div className="loading">Loading...</div>;
-  }
+  if (!user) return <div className="loading">Loading...</div>;
 
   if (currentView === 'assignments') {
     return (
@@ -34,10 +34,7 @@ const WorkerHomepage = () => {
           <div className="header-content">
             <h1 className="worker-title">My Assignments</h1>
             <div className="user-info">
-              <button 
-                onClick={() => setCurrentView('dashboard')} 
-                className="back-btn"
-              >
+              <button onClick={() => setCurrentView('dashboard')} className="back-btn">
                 ← Back to Dashboard
               </button>
               <button onClick={handleLogout} className="logout-btn">
@@ -67,22 +64,11 @@ const WorkerHomepage = () => {
 
       <div className="worker-main">
         <div className="dashboard-grid">
-          <div 
-            className="dashboard-card"
-            onClick={() => setCurrentView('assignments')}
-          >
+          <div className="dashboard-card" onClick={() => setCurrentView('assignments')}>
             <div className="card-icon">📋</div>
             <div className="card-content">
               <h3>My Assignments</h3>
               <p>View and manage assigned tasks</p>
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <div className="card-icon">📍</div>
-            <div className="card-content">
-              <h3>Check-In</h3>
-              <p>Check-in to your current location</p>
             </div>
           </div>
 
@@ -123,4 +109,4 @@ const WorkerHomepage = () => {
   );
 };
 
-export default WorkerHomepage; 
+export default WorkerHomepage;
