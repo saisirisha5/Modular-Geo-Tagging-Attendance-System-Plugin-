@@ -341,3 +341,15 @@
 .checkout-btn:hover {
   background-color: #c23b2d;
 }
+.checkin-btn:disabled,
+.checkout-btn:disabled {
+  background-color: #ccc; /* light gray */
+  color: #666; /* darker gray text */
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.checkin-btn,
+.checkout-btn {
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}

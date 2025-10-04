@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import './AssignmentViewer.css';
 import apiService from '../services/api';
 
+
 const AssignmentViewer = () => {
   const [assignments, setAssignments] = useState([]);
   const [todayAssignments, setTodayAssignments] = useState([]);
@@ -10,8 +11,12 @@ const AssignmentViewer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [addressCache, setAddressCache] = useState({}); // cache addresses
+  const [addressCache, setAddressCache] = useState({});
+  const [attendanceStatus, setAttendanceStatus] = useState({});
 
+  // ----------------------------
+  // Fetch assignments
+  // ----------------------------
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -28,6 +33,10 @@ const AssignmentViewer = () => {
       setAssignments(allData.assignments || []);
       setTodayAssignments(todayData.assignments || []);
       setUpcomingAssignments(upcomingData.assignments || []);
+
+      // Optionally: fetch previous attendance from backend
+      const attendance = await apiService.makeRequest('/worker/attendance/status');
+      setAttendanceStatus(attendance || {});
     } catch (err) {
       setError('Failed to fetch assignments');
     } finally {
@@ -35,10 +44,12 @@ const AssignmentViewer = () => {
     }
   };
 
-  // Reverse geocode lat/lng -> human-readable address
+  // ----------------------------
+  // Reverse geocode
+  // ----------------------------
   const fetchAddress = async (lat, lng) => {
     const key = `${lat},${lng}`;
-    if (addressCache[key]) return addressCache[key]; // use cache
+    if (addressCache[key]) return addressCache[key];
 
     try {
       const res = await fetch(
@@ -53,26 +64,22 @@ const AssignmentViewer = () => {
     }
   };
 
-  // Fetch addresses for assignments automatically
   useEffect(() => {
     const fetchAllAddresses = async () => {
       const all = [...assignments, ...todayAssignments, ...upcomingAssignments];
       for (const a of all) {
         const key = `${a.location.lat},${a.location.lng}`;
-        if (!addressCache[key]) {
-          await fetchAddress(a.location.lat, a.location.lng);
-        }
+        if (!addressCache[key]) await fetchAddress(a.location.lat, a.location.lng);
       }
     };
-    if (assignments.length > 0) {
-      fetchAllAddresses();
-    }
+    if (assignments.length > 0) fetchAllAddresses();
   }, [assignments, todayAssignments, upcomingAssignments]);
 
-  // open in Google Maps
+  // ----------------------------
+  // Utils
+  // ----------------------------
   const openInMaps = (lat, lng) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    window.open(url, '_blank');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
   };
 
   const formatDate = (dateString) => {
@@ -101,54 +108,89 @@ const AssignmentViewer = () => {
     }
   };
 
-  // -------------------------
+  // ----------------------------
   // Check-In / Check-Out
-  // -------------------------
-  const handleCheckIn = async (assignmentId) => {
+  // ----------------------------
+  const handleCheckIn = async (assignment) => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      alert("Geolocation not supported");
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const data = await apiService.makeRequest('/worker/attendance/start', {
-            method: 'POST',
-            data: { assignmentId, location: { lat: coords.latitude, lng: coords.longitude } },
-          });
-          alert(data.message || "Check-in successful!");
-        } catch (err) {
-          alert("Check-in failed: " + (err.response?.data?.message || err.message));
-        }
-      },
-      (err) => alert("Location error: " + err.message)
-    );
+
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      const { lat, lng } = coords;
+      const distance = getDistanceFromLatLonInMeters(
+        lat, lng,
+        assignment.location.lat,
+        assignment.location.lng
+      );
+
+      const now = new Date();
+      const startTime = new Date(`${assignment.date}T${assignment.timeSlot.start}`);
+      const endTime = new Date(`${assignment.date}T${assignment.timeSlot.end}`);
+
+      const valid = distance <= 200 && now >= startTime && now <= endTime;
+
+      try {
+        const data = await apiService.makeRequest('/worker/attendance/start', {
+          method: 'POST',
+          data: { assignmentId: assignment._id, location: { lat, lng }, valid },
+        });
+
+        alert(data.message || (valid ? "✅ Check-in valid!" : "❌ Check-in invalid!"));
+
+        setAttendanceStatus((prev) => ({
+          ...prev,
+          [assignment._id]: { ...prev[assignment._id], checkIn: valid ? 'valid' : 'invalid' },
+        }));
+      } catch (err) {
+        alert("Check-in failed");
+      }
+    });
   };
 
-  const handleCheckOut = async (assignmentId) => {
+  const handleCheckOut = async (assignment) => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      alert("Geolocation not supported");
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const data = await apiService.makeRequest('/worker/attendance/end', {
-            method: 'POST',
-            data: { assignmentId, location: { lat: coords.latitude, lng: coords.longitude } },
-          });
-          alert(data.message || "Check-out successful!");
-        } catch (err) {
-          alert("Check-out failed: " + (err.response?.data?.message || err.message));
-        }
-      },
-      (err) => alert("Location error: " + err.message)
-    );
+
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      const { lat, lng } = coords;
+      const distance = getDistanceFromLatLonInMeters(
+        lat, lng,
+        assignment.location.lat,
+        assignment.location.lng
+      );
+
+      const now = new Date();
+      const startTime = new Date(`${assignment.date}T${assignment.timeSlot.start}`);
+      const endTime = new Date(`${assignment.date}T${assignment.timeSlot.end}`);
+
+      const valid = distance <= 200 && now >= startTime && now <= endTime;
+
+      try {
+        const data = await apiService.makeRequest('/worker/attendance/end', {
+          method: 'POST',
+          data: { assignmentId: assignment._id, location: { lat, lng }, valid },
+        });
+
+        alert(data.message || (valid ? "✅ Check-out valid!" : "❌ Check-out invalid!"));
+
+        setAttendanceStatus((prev) => ({
+          ...prev,
+          [assignment._id]: { ...prev[assignment._id], checkOut: valid ? 'valid' : 'invalid' },
+        }));
+      } catch (err) {
+        alert("Check-out failed");
+      }
+    });
   };
 
-  if (loading) {
-    return <div className="loading">Loading your assignments...</div>;
-  }
+  // ----------------------------
+  // Render
+  // ----------------------------
+  if (loading) return <div className="loading">Loading your assignments...</div>;
 
   return (
     <div className="assignment-viewer">
@@ -183,9 +225,7 @@ const AssignmentViewer = () => {
               <div key={assignment._id} className="assignment-card">
                 <div className="assignment-header">
                   <div className="assignment-date">{formatDate(assignment.date)}</div>
-                  <div className="assignment-time">
-                    {assignment.timeSlot.start} - {assignment.timeSlot.end}
-                  </div>
+                  <div className="assignment-time">{assignment.timeSlot.start} - {assignment.timeSlot.end}</div>
                 </div>
                 <div className="assignment-content">
                   <div className="assignment-duration">
@@ -193,14 +233,8 @@ const AssignmentViewer = () => {
                   </div>
                   <div className="assignment-location">
                     <strong>📍 Location:</strong>
-                    <p>
-                      {addressCache[`${assignment.location.lat},${assignment.location.lng}`] ||
-                        `${assignment.location.lat}, ${assignment.location.lng}`}
-                    </p>
-                    <button
-                      className="map-btn"
-                      onClick={() => openInMaps(assignment.location.lat, assignment.location.lng)}
-                    >
+                    <p>{addressCache[`${assignment.location.lat},${assignment.location.lng}`] || `${assignment.location.lat}, ${assignment.location.lng}`}</p>
+                    <button className="map-btn" onClick={() => openInMaps(assignment.location.lat, assignment.location.lng)}>
                       🌍 Open in Google Maps
                     </button>
                   </div>
@@ -215,9 +249,23 @@ const AssignmentViewer = () => {
                     <p>{assignment.assignedBy?.name || 'Admin'}</p>
                   </div>
                 </div>
+
                 <div className="assignment-actions">
-                  <button className="checkin-btn" onClick={() => handleCheckIn(assignment._id)}>✅ Check In</button>
-                  <button className="checkout-btn" onClick={() => handleCheckOut(assignment._id)}>⏹️ Check Out</button>
+                  <button
+                    className="checkin-btn"
+                    onClick={() => handleCheckIn(assignment)}
+                    disabled={attendanceStatus[assignment._id]?.checkIn === 'valid'}
+                  >
+                    ✅ Check In {attendanceStatus[assignment._id]?.checkIn === 'invalid' ? '❌' : ''}
+                  </button>
+
+                  <button
+                    className="checkout-btn"
+                    onClick={() => handleCheckOut(assignment)}
+                    disabled={attendanceStatus[assignment._id]?.checkOut === 'valid'}
+                  >
+                    ⏹️ Check Out {attendanceStatus[assignment._id]?.checkOut === 'invalid' ? '❌' : ''}
+                  </button>
                 </div>
               </div>
             ))}

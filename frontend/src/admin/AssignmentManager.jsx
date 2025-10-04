@@ -78,19 +78,25 @@ const AssignmentManager = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await apiService.createAssignment({
-        workerId: formData.workerId,
-        date: formData.date,
-        location: {
-          lat: parseFloat(formData.location.latitude),
-          lng: parseFloat(formData.location.longitude)
-        },
-        timeSlot: formData.timeSlot,
-        requiredDurationMinutes: parseInt(formData.requiredDurationMinutes),
-        description: formData.description,
-      });
+  e.preventDefault();
+
+  const lat = parseFloat(formData.location.latitude);
+  const lng = parseFloat(formData.location.longitude);
+
+  if (isNaN(lat) || isNaN(lng)) {
+    setError("Please fetch a valid location before submitting.");
+    return;
+  }
+
+  try {
+    await apiService.createAssignment({
+      workerId: formData.workerId,
+      date: formData.date,
+      location: { lat, lng },
+      timeSlot: formData.timeSlot,
+      requiredDurationMinutes: parseInt(formData.requiredDurationMinutes, 10),
+      description: formData.description,
+    });
 
       setShowCreateForm(false);
       setFormData({
