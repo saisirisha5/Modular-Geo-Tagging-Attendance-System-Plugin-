@@ -295,3 +295,49 @@
   50% { transform: scale(1.03) translateY(-2px); }
   100% { transform: scale(1) translateY(-2px); }
 }
+
+.map-btn {
+  margin-top: 4px;
+  background: linear-gradient(135deg, #4285F4, #34A853); /* Google blue → green */
+  color: white;
+  border: none;
+  padding: 6px 10px;   /* smaller padding */
+  border-radius: 4px;  /* smaller rounding */
+  font-size: 15px;     /* smaller font */
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.map-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+
+.checkin-btn {
+  background-color: #247d3c; /* Green */
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-right: 8px;
+}
+.checkin-btn:hover {
+  background-color: #2c8d45;
+}
+
+.checkout-btn {
+  background-color: #ea4335; /* Red */
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.checkout-btn:hover {
+  background-color: #c23b2d;
+}

@@ -10,6 +10,7 @@ const AssignmentViewer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [addressCache, setAddressCache] = useState({}); // cache addresses
 
   useEffect(() => {
     fetchAssignments();
@@ -32,6 +33,46 @@ const AssignmentViewer = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Reverse geocode lat/lng -> human-readable address
+  const fetchAddress = async (lat, lng) => {
+    const key = `${lat},${lng}`;
+    if (addressCache[key]) return addressCache[key]; // use cache
+
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+      );
+      const data = await res.json();
+      const address = data.display_name || `${lat}, ${lng}`;
+      setAddressCache((prev) => ({ ...prev, [key]: address }));
+      return address;
+    } catch {
+      return `${lat}, ${lng}`;
+    }
+  };
+
+  // Fetch addresses for assignments automatically
+  useEffect(() => {
+    const fetchAllAddresses = async () => {
+      const all = [...assignments, ...todayAssignments, ...upcomingAssignments];
+      for (const a of all) {
+        const key = `${a.location.lat},${a.location.lng}`;
+        if (!addressCache[key]) {
+          await fetchAddress(a.location.lat, a.location.lng);
+        }
+      }
+    };
+    if (assignments.length > 0) {
+      fetchAllAddresses();
+    }
+  }, [assignments, todayAssignments, upcomingAssignments]);
+
+  // open in Google Maps
+  const openInMaps = (lat, lng) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(url, '_blank');
   };
 
   const formatDate = (dateString) => {
@@ -77,7 +118,7 @@ const AssignmentViewer = () => {
           });
           alert(data.message || "Check-in successful!");
         } catch (err) {
-          alert("Check-in failed: " + err.message);
+          alert("Check-in failed: " + (err.response?.data?.message || err.message));
         }
       },
       (err) => alert("Location error: " + err.message)
@@ -98,7 +139,7 @@ const AssignmentViewer = () => {
           });
           alert(data.message || "Check-out successful!");
         } catch (err) {
-          alert("Check-out failed: " + err.message);
+          alert("Check-out failed: " + (err.response?.data?.message || err.message));
         }
       },
       (err) => alert("Location error: " + err.message)
@@ -152,7 +193,16 @@ const AssignmentViewer = () => {
                   </div>
                   <div className="assignment-location">
                     <strong>📍 Location:</strong>
-                    <p>{assignment.location.lat}, {assignment.location.lng}</p>
+                    <p>
+                      {addressCache[`${assignment.location.lat},${assignment.location.lng}`] ||
+                        `${assignment.location.lat}, ${assignment.location.lng}`}
+                    </p>
+                    <button
+                      className="map-btn"
+                      onClick={() => openInMaps(assignment.location.lat, assignment.location.lng)}
+                    >
+                      🌍 Open in Google Maps
+                    </button>
                   </div>
                   {assignment.description && (
                     <div className="assignment-description">
@@ -166,8 +216,8 @@ const AssignmentViewer = () => {
                   </div>
                 </div>
                 <div className="assignment-actions">
-                  <button onClick={() => handleCheckIn(assignment._id)}>Check In</button>
-                  <button onClick={() => handleCheckOut(assignment._id)}>Check Out</button>
+                  <button className="checkin-btn" onClick={() => handleCheckIn(assignment._id)}>✅ Check In</button>
+                  <button className="checkout-btn" onClick={() => handleCheckOut(assignment._id)}>⏹️ Check Out</button>
                 </div>
               </div>
             ))}
