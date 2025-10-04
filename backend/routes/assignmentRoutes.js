@@ -1,3 +1,4 @@
+//Admin routes
 import express from 'express';
 import { 
   createAssignment, 
@@ -11,7 +12,8 @@ import verifyToken from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Assignment CRUD operations
+// Assignment CRUD operations 
+// localhost:5000/api/admin/
 router.post('/assign', verifyToken, createAssignment);
 router.get('/assignments', verifyToken, getAllAssignmentsByAdmin);
 router.get('/assignments/:id', verifyToken, getAssignmentById);

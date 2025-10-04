@@ -12,11 +12,15 @@ export const startAttendance = async (req, res) => {
   try {
     const workerUserId = req.user.id;
     const { assignmentId, location } = req.body; // location = { lat, lng }
+     // console.log("Received body:", req.body);
 
     if (!assignmentId || !location?.lat || !location?.lng) {
+       console.log("Missing required fields");
       return res.status(400).json({ error: "Missing assignmentId or location" });
     }
-
+   //  console.log("Assignment ID:", assignmentId);
+     //console.log("Latitude:", location.lat, "Longitude:", location.lng);
+    
     // Validate worker
     const worker = await User.findById(workerUserId);
     if (!worker || worker.role !== 'worker') {
@@ -126,3 +130,4 @@ export const endAttendance = async (req, res) => {
     res.status(500).json({ error: "Server error", details: err.message });
   }
 };
+

@@ -133,7 +133,7 @@ const AssignmentManager = () => {
   return (
     <div className="assignment-manager">
       <div className="header">
-        <h2>Assignment Manager</h2>
+        {/* <h2>Assignment Manager</h2> */}
         <button 
           className="create-btn"
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -144,18 +144,6 @@ const AssignmentManager = () => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {/* <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px', marginBottom: '20px', borderRadius: '8px', color: 'white' }}>
-        <strong>Debug Info:</strong> Found {workers.length} workers
-        {workers.length > 0 && (
-          <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-            {workers.map(worker => (
-              <li key={worker.id}>
-                {worker.name || 'Unknown Worker'} ({worker.email}) - ID: {worker.id}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div> */}
 
       {showCreateForm && (
         <div className="create-form">

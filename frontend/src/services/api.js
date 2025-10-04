@@ -107,9 +107,58 @@ class ApiService {
     });
   }
 
+// -------------------------
+// Worker methods
+// -------------------------
+async getAssignmentsForWorker() {
+  return this.makeRequest('/worker/assignments');
 }
 
+async getTodayAssignments() {
+  return this.makeRequest('/worker/assignments/today');
+}
 
+async getUpcomingAssignments() {
+  return this.makeRequest('/worker/assignments/upcoming');
+}
+
+async getAttendanceStatus() {
+  return this.makeRequest('/worker/attendance/status');
+}
+
+async startAttendance(assignmentId, lat, lng) {
+  console.log("DEBUG - Sending to backend (check-in):", {
+    assignment_id: assignmentId,
+    latitude: lat,
+    longitude: lng,
+  });
+  return this.makeRequest('/worker/attendance/start', {
+    method: 'POST',
+    data: {
+      assignment_id: assignmentId,  // ✅ match backend naming
+      latitude: lat,
+      longitude: lng,
+    },
+  });
+}
+
+async endAttendance(assignmentId, lat, lng) {
+  console.log("DEBUG - Sending to backend (check-out):", {
+    assignment_id: assignmentId,
+    latitude: lat,
+    longitude: lng,
+  });
+  return this.makeRequest('/worker/attendance/end', {
+    method: 'POST',
+    data: {
+      assignment_id: assignmentId,  // ✅ match backend naming
+      latitude: lat,
+      longitude: lng,
+    },
+  });
+}
+
+}
 
 const apiService = new ApiService();
 export default apiService;
