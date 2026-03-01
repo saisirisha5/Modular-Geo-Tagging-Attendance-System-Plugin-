@@ -57,7 +57,7 @@ const AdminHomepage = () => {
         <div className="header-content">
           <h1 className="admin-title">Admin Dashboard</h1>
           <div className="user-info">
-            <span className="welcome-text">Welcome, {user.email}</span>
+            <span className="welcome-text">Welcome, {user.name}</span>
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>
@@ -89,34 +89,12 @@ const AdminHomepage = () => {
           <div className="dashboard-card">
             <div className="card-icon">📊</div>
             <div className="card-content">
-              <h3>Analytics</h3>
+              <h3>Reports & Analytics</h3>
               <p>View system analytics and reports</p>
             </div>
           </div>
 
-          <div className="dashboard-card">
-            <div className="card-icon">⚙️</div>
-            <div className="card-content">
-              <h3>Settings</h3>
-              <p>Configure system settings and preferences</p>
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <div className="card-icon">🌍</div>
-            <div className="card-content">
-              <h3>Geo-Location</h3>
-              <p>Track worker locations and routes</p>
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <div className="card-icon">📋</div>
-            <div className="card-content">
-              <h3>Reports</h3>
-              <p>Generate and view detailed reports</p>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>

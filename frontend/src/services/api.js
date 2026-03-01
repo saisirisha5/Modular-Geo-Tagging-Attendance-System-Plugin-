@@ -18,12 +18,18 @@ class ApiService {
     }
 
     try {
-      const response = await axios({
+      const config = {
         url,
         method: options.method || 'GET',
         headers: { ...defaultHeaders, ...options.headers },
-        data: options.data || null,
-      });
+      };
+
+      // Only include data if it exists
+      if (options.data) {
+        config.data = options.data;
+      }
+
+      const response = await axios(config);
       return response.data;
     } catch (error) {
       console.error('API Request failed:', error);
@@ -101,12 +107,17 @@ class ApiService {
     });
   }
 
+  async updateAssignment(id, data) {
+    return this.makeRequest(`/admin/assignments/${id}`, {
+      method: 'PUT',
+      data,
+    });
+  }
   async deleteAssignment(id) {
     return this.makeRequest(`/admin/assignments/${id}`, {
       method: 'DELETE',
     });
   }
-
 // -------------------------
 // Worker methods
 // -------------------------
@@ -135,7 +146,7 @@ async startAttendance(assignmentId, lat, lng) {
   return this.makeRequest('/worker/attendance/start', {
     method: 'POST',
     data: {
-      assignment_id: assignmentId,  // ✅ match backend naming
+      assignment_id: assignmentId,  
       latitude: lat,
       longitude: lng,
     },
@@ -151,7 +162,7 @@ async endAttendance(assignmentId, lat, lng) {
   return this.makeRequest('/worker/attendance/end', {
     method: 'POST',
     data: {
-      assignment_id: assignmentId,  // ✅ match backend naming
+      assignment_id: assignmentId,  
       latitude: lat,
       longitude: lng,
     },

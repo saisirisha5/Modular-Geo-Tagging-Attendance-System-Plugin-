@@ -202,7 +202,11 @@
   transform: scale(1.1);
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
-
+select:disabled {
+  background-color: #f3f3f3;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
 .assignment-details p {
   margin: 8px 0;
   color: #555;
@@ -215,6 +219,27 @@
   font-weight: 600;
 }
 
+.worker-checkbox-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 10px;
+  background: white;
+}
+
+.worker-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.worker-checkbox-item input {
+  cursor: pointer;
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -223,6 +248,18 @@
   color: white;
   font-size: 18px;
   font-weight: 600;
+}
+
+.mapboxgl-map {
+  width: 100% !important;
+}
+
+.mapboxgl-canvas {
+  outline: none;
+}
+
+.mapboxgl-ctrl-attrib {
+  font-size: 10px !important;
 }
 
 /* Responsive Design */

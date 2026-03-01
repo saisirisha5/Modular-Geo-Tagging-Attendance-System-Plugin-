@@ -1,297 +1,325 @@
-// backend/admin/AssignmentController.js
 import Assignment from '../../models/assignmentSchema.js';
 import WorkerProfile from '../../models/workerProfile.js';
 import User from '../../models/userSchema.js';
 
-// ==========================
-// POST /admin/assign
-// Create assignment for a worker
-// ==========================
+/* =====================================================
+   POST /admin/assign
+   Create assignment(s) (ADMIN ONLY)
+   Supports MULTIPLE workers
+===================================================== */
 export const createAssignment = async (req, res) => {
   try {
-    const { workerId, date, location, timeSlot, requiredDurationMinutes, description } = req.body;
-    const adminUserId = req.user.id; // This is the User ID from JWT
-
-    // Validate required fields
-    if (!workerId || !date || !location || !timeSlot) {
-      return res.status(400).json({
-        error: "Missing required fields: workerId, date, location, timeSlot"
-      });
-    }
-
-    // location must have lat/lng
-    if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
-      return res.status(400).json({ error: "Location (lat/lng) is required" });
-    }
-
-    // Verify admin role
-    const adminUser = await User.findById(adminUserId);
-    if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied. Admin role required." });
-    }
-
-    // Validate worker exists and is a worker
-    const workerUser = await User.findById(workerId);
-    if (!workerUser || workerUser.role !== 'worker') {
-      return res.status(404).json({ error: "Worker not found" });
-    }
-
-    // Ensure worker has a profile
-    const workerProfile = await WorkerProfile.findById(workerUser.profile);
-    if (!workerProfile) {
-      return res.status(404).json({ error: "Worker profile not found" });
-    }
-
-    // Check for duplicate assignment overlap
-    const existingAssignment = await Assignment.findOne({
-      worker: workerUser.profile,
+    const {
+      workerIds, // ARRAY of worker user IDs
       date,
-      $or: [
-        {
-          'timeSlot.start': { $lt: timeSlot.end },
-          'timeSlot.end': { $gt: timeSlot.start }
-        }
-      ]
-    });
-
-    if (existingAssignment) {
-      return res.status(400).json({
-        error: "Worker already has an assignment during this time slot"
-      });
-    }
-
-    // Create new assignment
-    const assignment = new Assignment({
-      worker: workerUser.profile,          // worker’s profile ID
-      assignedBy: adminUser.profile,       // admin’s profile ID
-      date,
+      address,
       location,
       timeSlot,
-      requiredDurationMinutes: requiredDurationMinutes || 0,
-      description: description || ''
-    });
+      requiredDurationMinutes,
+      description
+    } = req.body;
 
-    await assignment.save();
-
-    // Populate worker details for response
-    await assignment.populate('worker', 'name');
-
-    res.status(201).json({
-      message: "Assignment created successfully",
-      assignment
-    });
-  } catch (err) {
-    console.error("Assignment Error:", err);
-    res.status(500).json({ error: "Server error", details: err.message });
-  }
-};
-
-// ==========================
-// GET /admin/assignments
-// Get all assignments created by admin
-// ==========================
-export const getAllAssignmentsByAdmin = async (req, res) => {
-  try {
     const adminUserId = req.user.id;
 
+    /* ------------------ BASIC VALIDATION ------------------ */
+    if (
+      !workerIds ||
+      !Array.isArray(workerIds) ||
+      workerIds.length === 0 ||
+      !date ||
+      !address ||
+      !location?.lat ||
+      !location?.lng ||
+      !timeSlot?.start ||
+      !timeSlot?.end
+    ) {
+      return res.status(400).json({
+        error: 'Missing required fields'
+      });
+    }
+
+    /* ------------------ ADMIN CHECK ------------------ */
     const adminUser = await User.findById(adminUserId);
     if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied. Admin role required." });
+      return res.status(403).json({ error: 'Admin access required' });
     }
 
-    const assignments = await Assignment.find({ assignedBy: adminUser.profile })
-      .populate('worker', 'name')
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      message: "Assignments retrieved successfully",
-      count: assignments.length,
-      assignments
-    });
-  } catch (err) {
-    console.error("Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch assignments", details: err.message });
-  }
-};
-
-// ==========================
-// GET /admin/workers
-// Get all workers for dropdown
-// ==========================
-export const getAllWorkers = async (req, res) => {
-  try {
-    const adminUserId = req.user.id;
-
-    // Verify admin
-    const adminUser = await User.findById(adminUserId);
-    if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied. Admin role required." });
+    if (!adminUser.profile) {
+      return res.status(400).json({ error: 'Admin profile not found' });
     }
 
-    // Get all workers
-    const workers = await User.find({ role: 'worker' })
-  .populate({ path: 'profile', model: 'WorkerProfile', select: 'name assignedLocation createdAt' })
-  .select('email profile');
+    const createdAssignments = [];
 
+    /* ------------------ LOOP THROUGH WORKERS ------------------ */
+    for (const workerId of workerIds) {
 
-    const formattedWorkers = workers.map(worker => ({
-      id: worker._id,
-      email: worker.email,   // always from User
-      name: worker.profile?.name || 'Unknown Worker',
-      assignedLocation: worker.profile?.assignedLocation || null,
-      createdAt: worker.profile?.createdAt || null
-    }));
+      const workerUser = await User.findById(workerId);
+      if (!workerUser || workerUser.role !== 'worker') {
+        return res.status(404).json({
+          error: `Worker not found: ${workerId}`
+        });
+      }
 
-    res.status(200).json({
-      message: "Workers retrieved successfully",
-      count: formattedWorkers.length,
-      workers: formattedWorkers
-    });
-  } catch (err) {
-    console.error("Workers Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch workers", details: err.message });
-  }
-};
+      const workerProfile = await WorkerProfile.findById(workerUser.profile);
+      if (!workerProfile) {
+        return res.status(404).json({
+          error: `Worker profile missing for ${workerUser.name}`
+        });
+      }
 
-// ==========================
-// GET /admin/assignments/:id
-// Get single assignment
-// ==========================
-export const getAssignmentById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const adminUserId = req.user.id;
-
-    const adminUser = await User.findById(adminUserId);
-    if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied. Admin role required." });
-    }
-
-    const assignment = await Assignment.findById(id)
-      .populate('worker', 'name assignedLocation')
-      .populate('assignedBy', 'name');
-
-    if (!assignment) {
-      return res.status(404).json({ error: "Assignment not found" });
-    }
-
-    if (assignment.assignedBy._id.toString() !== adminUser.profile.toString()) {
-      return res.status(403).json({ error: "Access denied. You can only view your own assignments." });
-    }
-
-    res.status(200).json({
-      message: "Assignment retrieved successfully",
-      assignment
-    });
-  } catch (err) {
-    console.error("Assignment Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch assignment", details: err.message });
-  }
-};
-
-// ==========================
-// PUT /admin/assignments/:id
-// Update assignment
-// ==========================
-export const updateAssignment = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { date, location, timeSlot, requiredDurationMinutes, description } = req.body;
-    const adminUserId = req.user.id;
-
-    const adminUser = await User.findById(adminUserId);
-    if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied. Admin role required." });
-    }
-
-    const assignment = await Assignment.findById(id);
-    if (!assignment) {
-      return res.status(404).json({ error: "Assignment not found" });
-    }
-
-    if (assignment.assignedBy.toString() !== adminUser.profile.toString()) {
-      return res.status(403).json({ error: "Access denied. You can only update your own assignments." });
-    }
-
-    // Check for conflicts if updating date/time
-    if (date || timeSlot) {
-      const newDate = date || assignment.date;
-      const newTimeSlot = timeSlot || assignment.timeSlot;
-
+      /* ---------- TIME CONFLICT CHECK ---------- */
       const existingAssignment = await Assignment.findOne({
-        _id: { $ne: id },
-        worker: assignment.worker,
-        date: newDate,
+        worker: workerUser.profile,
+        date,
         $or: [
           {
-            'timeSlot.start': { $lt: newTimeSlot.end },
-            'timeSlot.end': { $gt: newTimeSlot.start }
+            'timeSlot.start': { $lt: timeSlot.end },
+            'timeSlot.end': { $gt: timeSlot.start }
           }
         ]
       });
 
       if (existingAssignment) {
         return res.status(400).json({
-          error: "Worker already has an assignment during this time slot"
+          error: `Worker ${workerUser.name} already has an assignment during this time slot`
         });
       }
+
+      /* ---------- CREATE ASSIGNMENT ---------- */
+      const assignment = new Assignment({
+        worker: workerUser.profile,
+        assignedBy: adminUser.profile,
+        date,
+        address,
+        location: {
+          lat: location.lat,
+          lng: location.lng
+        },
+        timeSlot,
+        requiredDurationMinutes: requiredDurationMinutes || 0,
+        description: description || ''
+      });
+
+      await assignment.save();
+      await assignment.populate('worker', 'name');
+
+      createdAssignments.push(assignment);
     }
 
-    // Apply updates
-    const updatedAssignment = await Assignment.findByIdAndUpdate(
-      id,
-      {
-        date: date || assignment.date,
-        location: location || assignment.location,
-        timeSlot: timeSlot || assignment.timeSlot,
-        requiredDurationMinutes: requiredDurationMinutes !== undefined
-          ? requiredDurationMinutes
-          : assignment.requiredDurationMinutes,
-        description: description !== undefined
-          ? description
-          : assignment.description
-      },
-      { new: true }
-    ).populate('worker', 'name');
-
-    res.status(200).json({
-      message: "Assignment updated successfully",
-      assignment: updatedAssignment
+    res.status(201).json({
+      message: 'Assignments created successfully',
+      assignments: createdAssignments
     });
+
   } catch (err) {
-    console.error("Assignment Update Error:", err);
-    res.status(500).json({ error: "Failed to update assignment", details: err.message });
+    console.error('Assignment Create Error:', err);
+    res.status(500).json({
+      error: 'Server error',
+      details: err.message
+    });
   }
 };
 
-// ==========================
-// DELETE /admin/assignments/:id
-// Delete assignment
-// ==========================
-export const deleteAssignment = async (req, res) => {
+
+/* =====================================================
+   GET /admin/assignments
+===================================================== */
+export const getAllAssignmentsByAdmin = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const assignments = await Assignment.find({
+      assignedBy: adminUser.profile
+    })
+      .populate('worker', 'name')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      count: assignments.length,
+      assignments
+    });
+
+  } catch (err) {
+    console.error('Fetch Assignments Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* =====================================================
+   GET /admin/workers
+===================================================== */
+export const getAllWorkers = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const workers = await User.find({ role: 'worker' })
+      .populate('profile')
+      .select('email name');
+
+    const formatted = workers.map(w => ({
+      id: w._id,
+      email: w.email,
+      name: w.name || 'No name'
+    }));
+
+    res.status(200).json({ workers: formatted });
+
+  } catch (err) {
+    console.error('Fetch Workers Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* =====================================================
+   GET /admin/assignments/:id
+===================================================== */
+export const getAssignmentById = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const assignment = await Assignment.findById(req.params.id)
+      .populate('worker', 'name')
+      .populate('assignedBy', 'name');
+
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    if (assignment.assignedBy.toString() !== adminUser.profile.toString()) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+
+    res.status(200).json({ assignment });
+
+  } catch (err) {
+    console.error('Fetch Assignment Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* =====================================================
+   PUT /admin/assignments/:id
+===================================================== */
+export const updateAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    const adminUserId = req.user.id;
+    const {
+      date,
+      address,
+      location,
+      timeSlot,
+      requiredDurationMinutes,
+      description
+    } = req.body;
 
-    const adminUser = await User.findById(adminUserId);
+    const adminUser = await User.findById(req.user.id);
     if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ error: "Access denied. Admin role required." });
+      return res.status(403).json({ error: 'Admin access required' });
     }
 
     const assignment = await Assignment.findById(id);
     if (!assignment) {
-      return res.status(404).json({ error: "Assignment not found" });
+      return res.status(404).json({ error: 'Assignment not found' });
     }
 
     if (assignment.assignedBy.toString() !== adminUser.profile.toString()) {
-      return res.status(403).json({ error: "Access denied. You can only delete your own assignments." });
+      return res.status(403).json({ error: 'Unauthorized access' });
     }
 
-    await Assignment.findByIdAndDelete(id);
+    /* ---------- TIME CONFLICT CHECK ---------- */
+    if (date || timeSlot) {
+      const newDate = date || assignment.date;
+      const newSlot = timeSlot || assignment.timeSlot;
 
-    res.status(200).json({ message: "Assignment deleted successfully" });
+      const conflict = await Assignment.findOne({
+        _id: { $ne: id },
+        worker: assignment.worker,
+        date: newDate,
+        $or: [
+          {
+            'timeSlot.start': { $lt: newSlot.end },
+            'timeSlot.end': { $gt: newSlot.start }
+          }
+        ]
+      });
+
+      if (conflict) {
+        return res.status(400).json({
+          error: 'Worker already has an assignment during this time slot'
+        });
+      }
+    }
+
+    if (address) assignment.address = address;
+
+    if (location?.lat && location?.lng) {
+      assignment.location = {
+        lat: location.lat,
+        lng: location.lng
+      };
+    }
+
+    assignment.date = date || assignment.date;
+    assignment.timeSlot = timeSlot || assignment.timeSlot;
+    assignment.requiredDurationMinutes =
+      requiredDurationMinutes ?? assignment.requiredDurationMinutes;
+    assignment.description =
+      description ?? assignment.description;
+
+    await assignment.save();
+    await assignment.populate('worker', 'name');
+
+    res.status(200).json({
+      message: 'Assignment updated successfully',
+      assignment
+    });
+
   } catch (err) {
-    console.error("Assignment Delete Error:", err);
-    res.status(500).json({ error: "Failed to delete assignment", details: err.message });
+    console.error('Update Assignment Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+/* =====================================================
+   DELETE /admin/assignments/:id
+===================================================== */
+export const deleteAssignment = async (req, res) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || adminUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    if (assignment.assignedBy.toString() !== adminUser.profile.toString()) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+
+    await assignment.deleteOne();
+
+    res.status(200).json({
+      message: 'Assignment deleted successfully'
+    });
+
+  } catch (err) {
+    console.error('Delete Assignment Error:', err);
+    res.status(500).json({ error: err.message });
   }
 };

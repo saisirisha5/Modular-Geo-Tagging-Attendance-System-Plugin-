@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import apiService from '../services/api';
 import './AssignmentManager.css';
+import MapPicker from '../components/MapPicker';
 
 const AssignmentManager = () => {
   const [workers, setWorkers] = useState([]);
@@ -8,27 +9,47 @@ const AssignmentManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
   const [formData, setFormData] = useState({
-    workerId: '',
+    workerIds: [],
     date: '',
     address: '',
-    location: { latitude: '', longitude: '' },
     timeSlot: { start: '', end: '' },
     requiredDurationMinutes: '',
     description: ''
   });
-  const [fetchingLocation, setFetchingLocation] = useState(false);
 
+  /* ==========================
+     INITIAL FETCH
+  ========================== */
   useEffect(() => {
     fetchData();
   }, []);
 
+  /* ==========================
+     FORCE MAP RESIZE
+  ========================== */
+  useEffect(() => {
+    if (showCreateForm) {
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 500);
+    }
+  }, [showCreateForm]);
+
+  /* ==========================
+     FETCH DATA
+  ========================== */
   const fetchData = async () => {
     try {
       setLoading(true);
+
       const [workersData, assignmentsData] = await Promise.all([
         apiService.getWorkers(),
-        apiService.getAssignments(),
+        apiService.getAssignments()
       ]);
 
       setWorkers(workersData.workers || []);
@@ -40,80 +61,92 @@ const AssignmentManager = () => {
     }
   };
 
-  // Fetch lat/lng from OpenStreetMap Nominatim (unchanged)
-  const fetchLatLng = async (address) => {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data && data.length > 0) {
-      return {
-        latitude: data[0].lat,
-        longitude: data[0].lon
-      };
-    }
-    throw new Error("Location not found");
-  };
+  /* ==========================
+     SUBMIT (CREATE / UPDATE)
+  ========================== */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
 
-  const handleFetchLocation = async () => {
-    if (!formData.address) {
-      alert("Please enter an address first.");
+    if (formData.timeSlot.start >= formData.timeSlot.end) {
+      setError('End time must be after start time');
       return;
     }
-    setFetchingLocation(true);
-    try {
-      const loc = await fetchLatLng(formData.address);
-      setFormData({
-        ...formData,
-        location: {
-          latitude: loc.latitude,
-          longitude: loc.longitude
-        }
-      });
-      alert(`Location found: ${loc.latitude}, ${loc.longitude}`);
-    } catch (err) {
-      alert("Could not fetch location: " + err.message);
-    } finally {
-      setFetchingLocation(false);
+
+    if (!selectedLocation) {
+      setError('Please select location on map');
+      return;
     }
-  };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
+    if (!isEditMode && formData.workerIds.length === 0) {
+      setError('Please select at least one worker');
+      return;
+    }
 
-  const lat = parseFloat(formData.location.latitude);
-  const lng = parseFloat(formData.location.longitude);
+    try {
+      const payload = {
+        workerIds: formData.workerIds,
+        date: formData.date,
+        address: formData.address,
+        location: selectedLocation,
+        timeSlot: formData.timeSlot,
+        requiredDurationMinutes: Number(formData.requiredDurationMinutes),
+        description: formData.description
+      };
 
-  if (isNaN(lat) || isNaN(lng)) {
-    setError("Please fetch a valid location before submitting.");
-    return;
-  }
+      if (isEditMode) {
+        await apiService.updateAssignment(editingId, payload);
+      } else {
+        await apiService.createAssignment(payload);
+      }
 
-  try {
-    await apiService.createAssignment({
-      workerId: formData.workerId,
-      date: formData.date,
-      location: { lat, lng },
-      timeSlot: formData.timeSlot,
-      requiredDurationMinutes: parseInt(formData.requiredDurationMinutes, 10),
-      description: formData.description,
-    });
-
+      // Reset everything
+      setIsEditMode(false);
+      setEditingId(null);
       setShowCreateForm(false);
+      setSelectedLocation(null);
+
       setFormData({
-        workerId: '',
+        workerIds: [],
         date: '',
         address: '',
-        location: { latitude: '', longitude: '' },
         timeSlot: { start: '', end: '' },
         requiredDurationMinutes: '',
         description: ''
       });
+
       fetchData();
+
     } catch (err) {
-      setError(err.message || 'Failed to create assignment');
+      setError(err.message || 'Failed to save assignment');
     }
   };
 
+  /* ==========================
+     EDIT MODE
+  ========================== */
+  const handleEdit = (assignment) => {
+    setIsEditMode(true);
+    setEditingId(assignment._id);
+    setShowCreateForm(true);
+
+    setFormData({
+      workerIds: assignment.worker?._id
+        ? [assignment.worker._id]
+        : [],
+      date: assignment.date,
+      address: assignment.address,
+      timeSlot: assignment.timeSlot,
+      requiredDurationMinutes: assignment.requiredDurationMinutes,
+      description: assignment.description
+    });
+
+    setSelectedLocation(assignment.location);
+  };
+
+  /* ==========================
+     DELETE
+  ========================== */
   const handleDelete = async (assignmentId) => {
     if (!window.confirm('Are you sure you want to delete this assignment?')) return;
 
@@ -125,7 +158,6 @@ const AssignmentManager = () => {
     }
   };
 
-
   if (loading) {
     return <div className="loading">Loading assignments...</div>;
   }
@@ -133,10 +165,14 @@ const AssignmentManager = () => {
   return (
     <div className="assignment-manager">
       <div className="header">
-        {/* <h2>Assignment Manager</h2> */}
-        <button 
+        <button
           className="create-btn"
-          onClick={() => setShowCreateForm(!showCreateForm)}
+          onClick={() => {
+            setShowCreateForm(!showCreateForm);
+            setIsEditMode(false);
+            setEditingId(null);
+            setSelectedLocation(null);
+          }}
         >
           {showCreateForm ? 'Cancel' : 'Create Assignment'}
         </button>
@@ -144,143 +180,175 @@ const AssignmentManager = () => {
 
       {error && <div className="error-message">{error}</div>}
 
-
+      {/* ==========================
+         FORM
+      ========================== */}
       {showCreateForm && (
         <div className="create-form">
-          <h3>Create New Assignment</h3>
+          <h3>
+            {isEditMode ? 'Update Assignment' : 'Create New Assignment'}
+          </h3>
+
           <form onSubmit={handleSubmit}>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Worker</label>
-                <select
-                  value={formData.workerId}
-                  onChange={(e) => setFormData({...formData, workerId: e.target.value})}
-                  required
-                >
-                  <option value="">Select Worker</option>
-                  {workers.map(worker => (
-                    <option key={worker.id} value={worker.id}>
-                      {worker.name || 'Unknown Worker'} ({worker.email})
-                    </option>
-                  ))}
-                </select>
+
+            {/* WORKERS */}
+            <div className="form-group">
+            <label>Workers</label>
+
+            {isEditMode ? (
+              <input
+                type="text"
+                value={
+                  workers.find(w => w.id === formData.workerIds[0])?.name || ''
+                }
+                disabled
+              />
+            ) : (
+              <div className="worker-checkbox-list">
+                {workers.map(worker => (
+                  <label key={worker.id} className="worker-checkbox-item">
+                    <input
+                      type="checkbox"
+                      value={worker.id}
+                      checked={formData.workerIds.includes(worker.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            workerIds: [...formData.workerIds, worker.id]
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            workerIds: formData.workerIds.filter(id => id !== worker.id)
+                          });
+                        }
+                      }}
+                    />
+                    {worker.name} ({worker.email})
+                  </label>
+                ))}
               </div>
-              <div className="form-group">
-                <label>Date</label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  required
-                />
-              </div>
+            )}
+
+            {!isEditMode && formData.workerIds.length === 0 && (
+              <small style={{ color: '#666' }}>
+                Select at least one worker
+              </small>
+            )}
+          </div>
+
+            {/* DATE */}
+            <div className="form-group">
+              <label>Date</label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
+                required
+              />
             </div>
 
+            {/* TIME */}
             <div className="form-row">
               <div className="form-group">
                 <label>Start Time</label>
                 <input
                   type="time"
                   value={formData.timeSlot.start}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    timeSlot: {...formData.timeSlot, start: e.target.value}
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      timeSlot: { ...formData.timeSlot, start: e.target.value }
+                    })
+                  }
                   required
                 />
               </div>
+
               <div className="form-group">
                 <label>End Time</label>
                 <input
                   type="time"
                   value={formData.timeSlot.end}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    timeSlot: {...formData.timeSlot, end: e.target.value}
-                  })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      timeSlot: { ...formData.timeSlot, end: e.target.value }
+                    })
+                  }
                   required
                 />
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group" style={{ flex: 2 }}>
-                <label>Address</label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  placeholder="Enter address (e.g. 1600 Amphitheatre Parkway, Mountain View, CA)"
-                  required
-                />
-              </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label>&nbsp;</label>
-                <button
-                  type="button"
-                  onClick={handleFetchLocation}
-                  disabled={fetchingLocation || !formData.address}
-                  style={{ width: '100%' }}
-                >
-                  {fetchingLocation ? "Fetching..." : "Fetch Location"}
-                </button>
-              </div>
+            {/* ADDRESS */}
+            <div className="form-group">
+              <label>Address</label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
+                required
+              />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Latitude</label>
-                <input
-                  type="text"
-                  value={formData.location.latitude}
-                  readOnly
-                  placeholder="Latitude"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Longitude</label>
-                <input
-                  type="text"
-                  value={formData.location.longitude}
-                  readOnly
-                  placeholder="Longitude"
-                  required
-                />
-              </div>
+            {/* MAP */}
+            <div style={{ marginTop: '20px' }}>
+              <MapPicker
+                onLocationSelect={setSelectedLocation}
+                initialLocation={selectedLocation}
+              />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Duration (minutes)</label>
-                <input
-                  type="number"
-                  value={formData.requiredDurationMinutes}
-                  onChange={(e) => setFormData({...formData, requiredDurationMinutes: e.target.value})}
-                  placeholder="480"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Assignment description"
-                />
-              </div>
+            {/* DURATION */}
+            <div className="form-group">
+              <label>Duration (minutes)</label>
+              <input
+                type="number"
+                value={formData.requiredDurationMinutes}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    requiredDurationMinutes: e.target.value
+                  })
+                }
+                required
+              />
+            </div>
+
+            {/* DESCRIPTION */}
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="submit-btn">Create Assignment</button>
+              <button type="submit" className="submit-btn">
+                {isEditMode ? 'Update Assignment' : 'Create Assignment'}
+              </button>
             </div>
+
           </form>
         </div>
       )}
 
+      {/* ==========================
+         LIST
+      ========================== */}
       <div className="assignments-list">
         <h3>All Assignments ({assignments.length})</h3>
+
         {assignments.length === 0 ? (
           <p className="no-assignments">No assignments found</p>
         ) : (
@@ -289,18 +357,35 @@ const AssignmentManager = () => {
               <div key={assignment._id} className="assignment-card">
                 <div className="assignment-header">
                   <h4>{assignment.worker?.name || 'Unknown Worker'}</h4>
-                  <button 
+
+                  <button
+                    onClick={() => handleEdit(assignment)}
+                    style={{
+                      marginRight: '10px',
+                      background: '#4CAF50',
+                      color: 'white',
+                      border: 'none',
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Edit
+                  </button>
+
+                  <button
                     className="delete-btn"
                     onClick={() => handleDelete(assignment._id)}
                   >
                     ×
                   </button>
                 </div>
+
                 <div className="assignment-details">
                   <p><strong>Date:</strong> {assignment.date}</p>
-                  <p><strong>Time:</strong> {assignment.timeSlot.start} - {assignment.timeSlot.end}</p>
+                  <p><strong>Time:</strong> {assignment.timeSlot.start} – {assignment.timeSlot.end}</p>
                   <p><strong>Duration:</strong> {assignment.requiredDurationMinutes} minutes</p>
-                  <p><strong>Location:</strong> {assignment.location.lat || assignment.location.latitude}, {assignment.location.lng || assignment.location.longitude}</p>
+                  <p><strong>Address:</strong> {assignment.address}</p>
                   {assignment.description && (
                     <p><strong>Description:</strong> {assignment.description}</p>
                   )}

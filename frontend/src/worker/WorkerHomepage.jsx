@@ -54,7 +54,7 @@ const WorkerHomepage = () => {
         <div className="header-content">
           <h1 className="worker-title">Worker Dashboard</h1>
           <div className="user-info">
-            <span className="welcome-text">Welcome, {user.email}</span>
+            <span className="welcome-text">Welcome, {user.name}</span>
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>
