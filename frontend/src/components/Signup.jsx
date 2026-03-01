@@ -8,8 +8,10 @@ const Signup = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'worker'
+    role: 'worker',
+    mobileNumber: ''
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,9 +27,15 @@ const Signup = () => {
     setLoading(true);
     setError('');
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // If worker → mobile number required
+    if (formData.role === 'worker' && !formData.mobileNumber) {
+      setError('Mobile number is required for workers');
       setLoading(false);
       return;
     }
@@ -37,18 +45,17 @@ const Signup = () => {
         formData.name,
         formData.email,
         formData.password,
-        formData.role
+        formData.role,
+        formData.mobileNumber
       );
-      
-      // Store user session
+
+      // Admin auto-login
       apiService.setUserSession(data.token, data.user);
-      
-      // Redirect based on role
+
       if (data.user.role === 'admin') {
         window.navigateToPage('admin');
-      } else if (data.user.role === 'worker') {
-        window.navigateToPage('worker');
       }
+
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -61,40 +68,36 @@ const Signup = () => {
       <div className="auth-card">
         <h2 className="auth-title">Create Account</h2>
         <p className="auth-subtitle">Join our platform today</p>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form onSubmit={handleSubmit} className="auth-form">
+
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label>Full Name</label>
             <input
               type="text"
-              id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Enter your full name"
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label>Email</label>
             <input
               type="email"
-              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="Enter your email"
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="role">Role</label>
+            <label>Role</label>
             <select
-              id="role"
               name="role"
               value={formData.role}
               onChange={handleChange}
@@ -104,44 +107,63 @@ const Signup = () => {
               <option value="admin">Admin</option>
             </select>
           </div>
-          
+
+          {/* ✅ SHOW ONLY IF WORKER */}
+          {formData.role === 'worker' && (
+            <div className="form-group">
+              <label>Mobile Number</label>
+              <input
+                type="text"
+                name="mobileNumber"
+                value={formData.mobileNumber}
+                onChange={handleChange}
+                placeholder="Enter 10-digit mobile number"
+                pattern="[0-9]{10}"
+                required
+              />
+            </div>
+          )}
+
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label>Password</label>
             <input
               type="password"
-              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Enter your password"
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label>Confirm Password</label>
             <input
               type="password"
-              id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              placeholder="Confirm your password"
             />
           </div>
-          
+
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
-        
+
         <p className="auth-link">
-          Already have an account? <button type="button" onClick={() => window.navigateToPage('login')} className="link-button">Sign in here</button>
+          Already have an account?{' '}
+          <button
+            type="button"
+            onClick={() => window.navigateToPage('login')}
+            className="link-button"
+          >
+            Sign in here
+          </button>
         </p>
       </div>
     </div>
   );
 };
 
-export default Signup; 
+export default Signup;

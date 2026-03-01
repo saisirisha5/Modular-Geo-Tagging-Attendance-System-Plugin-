@@ -1,4 +1,4 @@
-import mongoose, { trusted } from 'mongoose';
+import mongoose from 'mongoose';
 
 const workerProfile = new mongoose.Schema({
   name: {
@@ -9,7 +9,12 @@ const workerProfile = new mongoose.Schema({
     lat: { type: Number },
     lng: { type: Number }
   },
-
+   mobileNumber :{
+      type : String,
+      required : true,
+      trim: true,
+      match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit mobile number']
+   },
   createdAt: {
     type: Date,
     default: Date.now

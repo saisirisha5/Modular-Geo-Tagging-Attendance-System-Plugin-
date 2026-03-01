@@ -53,10 +53,10 @@ class ApiService {
     });
   }
 
-  async signup(name, email, password, role) {
+  async signup(name, email, password, role, mobileNumber) {
     return this.makeRequest('/auth/signup', {
       method: 'POST',
-      data: { name, email, password, role },
+      data: { name, email, password, role, mobileNumber },
     });
   }
 
