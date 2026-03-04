@@ -1,32 +1,46 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/userSchema.js';
+import jwt from "jsonwebtoken";
+import User from "../models/userSchema.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = { id: decoded.id };
 
-   if (decoded.role) {
-      req.user.role = decoded.role;
-    } else {
-      const user = await User.findById(decoded.id).select('role');
-      if (!user) return res.status(404).json({ message: "User not found" });
-      req.user.role = user.role;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Authorization token missing" });
     }
 
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // attach user info to request
+    req.user = {
+      id: decoded.id,
+      role: decoded.role
+    };
+
+    // Optional: verify user still exists
+    const userExists = await User.findById(decoded.id).select("_id role");
+
+    if (!userExists) {
+      return res.status(401).json({ message: "User no longer exists" });
+    }
+
+    // ensure role is always correct
+    req.user.role = userExists.role;
+
     next();
-  } catch (err) {
-    return res.status(403).json({ message: "Invalid or expired token" });
+
+  } catch (error) {
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Session expired. Please login again." });
+    }
+
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 

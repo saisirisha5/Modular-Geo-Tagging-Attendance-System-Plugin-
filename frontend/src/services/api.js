@@ -1,175 +1,198 @@
-// services/apiService.js
-import axios from 'axios';
+// services/api.js
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import axios from "axios";
+
+const API_BASE_URL = "http://localhost:5000/api";
+
+/* ==========================
+   AXIOS INSTANCE
+========================== */
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json"
+  }
+});
+
+/* ==========================
+   REQUEST INTERCEPTOR
+   Attach JWT automatically
+========================== */
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+/* ==========================
+   RESPONSE INTERCEPTOR
+   Handle expired sessions
+========================== */
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+
+    if (error.response) {
+
+      // Handle expired login
+      if (error.response.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+
+      // Convert backend message into JS Error
+      const message =
+        error.response.data?.message ||
+        error.response.data?.error ||
+        "Something went wrong";
+
+      return Promise.reject(new Error(message));
+    }
+
+    return Promise.reject(new Error(error.message));
+  }
+);
+/* ==========================
+   API SERVICE CLASS
+========================== */
 
 class ApiService {
-  async makeRequest(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
 
-    const defaultHeaders = {
-      'Content-Type': 'application/json',
-    };
+  /* ---------- AUTH ---------- */
 
-    // Add authorization header if token exists
-    const token = localStorage.getItem('token');
-    if (token) {
-      defaultHeaders.Authorization = `Bearer ${token}`;
-    }
-
-    try {
-      const config = {
-        url,
-        method: options.method || 'GET',
-        headers: { ...defaultHeaders, ...options.headers },
-      };
-
-      // Only include data if it exists
-      if (options.data) {
-        config.data = options.data;
-      }
-
-      const response = await axios(config);
-      return response.data;
-    } catch (error) {
-      console.error('API Request failed:', error);
-      if (error.response) {
-        throw new Error(
-          error.response.data.message ||
-          `HTTP error! status: ${error.response.status}`
-        );
-      }
-      throw new Error(error.message);
-    }
-  }
-
-  // -------------------------
-  // Authentication methods
-  // -------------------------
   async login(email, password) {
-    return this.makeRequest('/auth/login', {
-      method: 'POST',
-      data: { email, password },
-    });
+    const res = await api.post("/auth/login", { email, password });
+    return res.data;
   }
 
   async signup(name, email, password, role, mobileNumber) {
-    return this.makeRequest('/auth/signup', {
-      method: 'POST',
-      data: { name, email, password, role, mobileNumber },
+    const res = await api.post("/auth/signup", {
+      name,
+      email,
+      password,
+      role,
+      mobileNumber
     });
+
+    return res.data;
   }
 
-  // -------------------------
-  // Session helpers
-  // -------------------------
+  /* ---------- SESSION ---------- */
+
   setUserSession(token, user) {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
   }
 
   getUserSession() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
     return token && user ? { token, user: JSON.parse(user) } : null;
   }
 
   clearUserSession() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   }
 
   isAuthenticated() {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem("token");
   }
 
   getUserRole() {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     return user ? JSON.parse(user).role : null;
   }
 
-  // -------------------------
-// Admin methods
-// -------------------------
+  /* ---------- ADMIN ---------- */
 
   async getWorkers() {
-    return this.makeRequest('/admin/workers');
+    const res = await api.get("/admin/workers");
+    return res.data;
   }
 
   async getAssignments() {
-    return this.makeRequest('/admin/assignments');
+    const res = await api.get("/admin/assignments");
+    return res.data;
   }
 
   async createAssignment(data) {
-    return this.makeRequest('/admin/assign', {
-      method: 'POST',
-      data,
-    });
+    const res = await api.post("/admin/assign", data);
+    return res.data;
   }
 
   async updateAssignment(id, data) {
-    return this.makeRequest(`/admin/assignments/${id}`, {
-      method: 'PUT',
-      data,
-    });
+    const res = await api.put(`/admin/assignments/${id}`, data);
+    return res.data;
   }
+
   async deleteAssignment(id) {
-    return this.makeRequest(`/admin/assignments/${id}`, {
-      method: 'DELETE',
-    });
+    const res = await api.delete(`/admin/assignments/${id}`);
+    return res.data;
   }
-// -------------------------
-// Worker methods
-// -------------------------
-async getAssignmentsForWorker() {
-  return this.makeRequest('/worker/assignments');
-}
 
-async getTodayAssignments() {
-  return this.makeRequest('/worker/assignments/today');
-}
+  /* ---------- WORKER ---------- */
 
-async getUpcomingAssignments() {
-  return this.makeRequest('/worker/assignments/upcoming');
-}
+  async getAssignmentsForWorker() {
+    const res = await api.get("/worker/assignments");
+    return res.data;
+  }
 
-async getAttendanceStatus() {
-  return this.makeRequest('/worker/attendance/status');
-}
+  async getTodayAssignments() {
+    const res = await api.get("/worker/assignments/today");
+    return res.data;
+  }
 
-async startAttendance(assignmentId, lat, lng) {
-  console.log("DEBUG - Sending to backend (check-in):", {
-    assignment_id: assignmentId,
-    latitude: lat,
-    longitude: lng,
-  });
-  return this.makeRequest('/worker/attendance/start', {
-    method: 'POST',
-    data: {
-      assignment_id: assignmentId,  
+  async getUpcomingAssignments() {
+    const res = await api.get("/worker/assignments/upcoming");
+    return res.data;
+  }
+
+  async getAttendanceStatus() {
+    const res = await api.get("/worker/attendance/status");
+    return res.data;
+  }
+
+  async startAttendance(assignmentId, lat, lng) {
+    const res = await api.post("/worker/attendance/start", {
+      assignment_id: assignmentId,
       latitude: lat,
-      longitude: lng,
-    },
-  });
-}
+      longitude: lng
+    });
 
-async endAttendance(assignmentId, lat, lng) {
-  console.log("DEBUG - Sending to backend (check-out):", {
-    assignment_id: assignmentId,
-    latitude: lat,
-    longitude: lng,
-  });
-  return this.makeRequest('/worker/attendance/end', {
-    method: 'POST',
-    data: {
-      assignment_id: assignmentId,  
+    return res.data;
+  }
+
+  async endAttendance(assignmentId, lat, lng) {
+    const res = await api.post("/worker/attendance/end", {
+      assignment_id: assignmentId,
       latitude: lat,
-      longitude: lng,
-    },
-  });
+      longitude: lng
+    });
+
+    return res.data;
+  }
 }
 
-}
+/* ==========================
+   EXPORT
+========================== */
 
 const apiService = new ApiService();
 export default apiService;

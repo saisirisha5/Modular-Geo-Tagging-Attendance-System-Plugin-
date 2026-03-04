@@ -13,7 +13,8 @@
     "axios": "^1.12.2",
     "mapbox-gl": "^3.19.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

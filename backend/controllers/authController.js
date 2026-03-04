@@ -48,7 +48,7 @@ export const signup = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role, profile: user.profile },
       JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1h' }
     );
 
     res.status(201).json({
@@ -86,7 +86,7 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role, profile: user.profile },
       JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1h' }
     );
 
     res.status(200).json({

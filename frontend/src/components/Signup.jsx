@@ -1,19 +1,22 @@
-import { useState } from 'react';
-import apiService from '../services/api';
-import './Auth.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import apiService from "../services/api";
+import "./Auth.css";
 
 const Signup = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'worker',
-    mobileNumber: ''
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "worker",
+    mobileNumber: ""
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -25,17 +28,16 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
 
-    // If worker → mobile number required
-    if (formData.role === 'worker' && !formData.mobileNumber) {
-      setError('Mobile number is required for workers');
+    if (formData.role === "worker" && !formData.mobileNumber) {
+      setError("Mobile number is required for workers");
       setLoading(false);
       return;
     }
@@ -49,15 +51,17 @@ const Signup = () => {
         formData.mobileNumber
       );
 
-      // Admin auto-login
+      // store session
       apiService.setUserSession(data.token, data.user);
 
-      if (data.user.role === 'admin') {
-        window.navigateToPage('admin');
+      if (data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/worker");
       }
 
     } catch (err) {
-      setError(err.message || 'Signup failed. Please try again.');
+      setError(err.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -66,6 +70,7 @@ const Signup = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
+
         <h2 className="auth-title">Create Account</h2>
         <p className="auth-subtitle">Join our platform today</p>
 
@@ -108,8 +113,7 @@ const Signup = () => {
             </select>
           </div>
 
-          {/* ✅ SHOW ONLY IF WORKER */}
-          {formData.role === 'worker' && (
+          {formData.role === "worker" && (
             <div className="form-group">
               <label>Mobile Number</label>
               <input
@@ -147,20 +151,22 @@ const Signup = () => {
           </div>
 
           <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
+
         </form>
 
         <p className="auth-link">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <button
             type="button"
-            onClick={() => window.navigateToPage('login')}
+            onClick={() => navigate("/login")}
             className="link-button"
           >
             Sign in here
           </button>
         </p>
+
       </div>
     </div>
   );

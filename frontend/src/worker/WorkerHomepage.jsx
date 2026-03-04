@@ -1,28 +1,31 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import apiService from '../services/api';
 import AssignmentViewer from './AssignmentViewer';
 import './WorkerHomepage.css';
 
 const WorkerHomepage = () => {
+
+  const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
 
   useEffect(() => {
+
     const session = apiService.getUserSession();
+
     if (session) {
       setUser(session.user);
     } else {
-      window.navigateToPage
-        ? window.navigateToPage('login')
-        : (window.location.href = '/login');
+      navigate("/login");
     }
-  }, []);
+
+  }, [navigate]);
 
   const handleLogout = () => {
     apiService.clearUserSession();
-    window.navigateToPage
-      ? window.navigateToPage('login')
-      : (window.location.href = '/login');
+    navigate("/login");
   };
 
   if (!user) return <div className="loading">Loading...</div>;
@@ -30,81 +33,129 @@ const WorkerHomepage = () => {
   if (currentView === 'assignments') {
     return (
       <div className="worker-container">
+
         <div className="worker-header">
           <div className="header-content">
+
             <h1 className="worker-title">My Assignments</h1>
+
             <div className="user-info">
-              <button onClick={() => setCurrentView('dashboard')} className="back-btn">
+
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="back-btn"
+              >
                 ← Back to Dashboard
               </button>
-              <button onClick={handleLogout} className="logout-btn">
+
+              <button
+                onClick={handleLogout}
+                className="logout-btn"
+              >
                 Logout
               </button>
+
             </div>
+
           </div>
         </div>
+
         <AssignmentViewer />
+
       </div>
     );
   }
 
   return (
     <div className="worker-container">
+
       <div className="worker-header">
         <div className="header-content">
+
           <h1 className="worker-title">Worker Dashboard</h1>
+
           <div className="user-info">
+
             <span className="welcome-text">Welcome, {user.name}</span>
-            <button onClick={handleLogout} className="logout-btn">
+
+            <button
+              onClick={handleLogout}
+              className="logout-btn"
+            >
               Logout
             </button>
+
           </div>
+
         </div>
       </div>
 
       <div className="worker-main">
+
         <div className="dashboard-grid">
-          <div className="dashboard-card" onClick={() => setCurrentView('assignments')}>
+
+          <div
+            className="dashboard-card"
+            onClick={() => setCurrentView('assignments')}
+          >
+
             <div className="card-icon">📋</div>
+
             <div className="card-content">
               <h3>My Assignments</h3>
               <p>View and manage assigned tasks</p>
             </div>
+
           </div>
 
           <div className="dashboard-card">
+
             <div className="card-icon">🌍</div>
+
             <div className="card-content">
               <h3>My Location</h3>
               <p>View and update your location</p>
             </div>
+
           </div>
 
           <div className="dashboard-card">
+
             <div className="card-icon">📊</div>
+
             <div className="card-content">
               <h3>Work History</h3>
               <p>View your work history and reports</p>
             </div>
+
           </div>
 
           <div className="dashboard-card">
+
             <div className="card-icon">⏰</div>
+
             <div className="card-content">
               <h3>Time Tracking</h3>
               <p>Track your working hours</p>
             </div>
+
           </div>
 
           <div className="dashboard-card">
+
             <div className="card-icon">👤</div>
+
             <div className="card-content">
               <h3>Profile</h3>
               <p>Update your profile information</p>
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 };

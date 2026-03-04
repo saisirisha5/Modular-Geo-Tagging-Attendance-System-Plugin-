@@ -80,9 +80,9 @@ export const createAssignment = async (req, res) => {
       });
 
       if (existingAssignment) {
-        return res.status(400).json({
-          error: `Worker ${workerUser.name} already has an assignment during this time slot`
-        });
+      return res.status(400).json({
+        message: `Time conflict: Worker ${workerUser.name} already has an assignment during this time slot`
+      });
       }
 
       /* ---------- CREATE ASSIGNMENT ---------- */
@@ -257,7 +257,7 @@ export const updateAssignment = async (req, res) => {
 
       if (conflict) {
         return res.status(400).json({
-          error: 'Worker already has an assignment during this time slot'
+          message: 'Time conflict: Worker already has another assignment during this time slot'
         });
       }
     }
