@@ -80,13 +80,14 @@ class ApiService {
     return res.data;
   }
 
-  async signup(name, email, password, role, mobileNumber) {
+  async signup(name, email, password, role, mobileNumber, address) {
     const res = await api.post("/auth/signup", {
       name,
       email,
       password,
       role,
-      mobileNumber
+      mobileNumber,
+      address
     });
 
     return res.data;

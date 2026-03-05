@@ -5,16 +5,21 @@ const workerProfile = new mongoose.Schema({
     type: String,
     required: true
   },
-  assignedLocation: {
+  mobileNumber :{
+     type : String,
+     required : true,
+     trim: true,
+     match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit mobile number']
+  },
+  address :{
+    type :String,
+    required : true,
+    trim : true
+  },
+  residenceLocation: {
     lat: { type: Number },
     lng: { type: Number }
   },
-   mobileNumber :{
-      type : String,
-      required : true,
-      trim: true,
-      match: [/^[0-9]{10}$/, 'Please enter a valid 10-digit mobile number']
-   },
   createdAt: {
     type: Date,
     default: Date.now

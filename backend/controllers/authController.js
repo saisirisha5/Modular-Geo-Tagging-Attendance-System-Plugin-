@@ -5,36 +5,65 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// ========== SIGNUP ==========
+/* =====================================================
+   SIGNUP
+===================================================== */
 export const signup = async (req, res) => {
-  const { name, email, password, role, mobileNumber } = req.body;
+  const { name, email, password, role, mobileNumber, address } = req.body;
 
   try {
+
+    /* ---------- CHECK EXISTING USER ---------- */
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({
+        message: "User already exists"
+      });
     }
 
     let profile;
 
-    if (role === 'admin') {
-      profile = await Admin.create({ name });
+    /* ---------- ADMIN SIGNUP ---------- */
+    if (role === "admin") {
 
-    } else if (role === 'worker') {
+      profile = await Admin.create({
+        name
+      });
+
+    }
+
+    /* ---------- WORKER SIGNUP ---------- */
+    else if (role === "worker") {
 
       if (!mobileNumber) {
-        return res.status(400).json({ message: 'Mobile number is required for worker' });
+        return res.status(400).json({
+          message: "Mobile number is required for worker"
+        });
+      }
+
+      if (!address) {
+        return res.status(400).json({
+          message: "Address is required for worker"
+        });
       }
 
       profile = await Worker.create({
         name,
-        mobileNumber
+        mobileNumber,
+        address
       });
 
-    } else {
-      return res.status(400).json({ message: 'Invalid role' });
     }
 
+    /* ---------- INVALID ROLE ---------- */
+    else {
+      return res.status(400).json({
+        message: "Invalid role"
+      });
+    }
+
+    /* ---------- CREATE USER ---------- */
     const user = new User({
       name,
       email,
@@ -45,63 +74,94 @@ export const signup = async (req, res) => {
 
     await user.save();
 
+    /* ---------- CREATE TOKEN ---------- */
     const token = jwt.sign(
-      { id: user._id, role: user.role, profile: user.profile },
+      {
+        id: user._id,
+        role: user.role,
+        profile: user.profile
+      },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: "1h" }
     );
 
+    /* ---------- RESPONSE ---------- */
     res.status(201).json({
-      message: 'User registered successfully',
+      message: "User registered successfully",
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.role
       }
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Signup failed', error: err.message });
+
+    console.error("Signup Error:", err);
+
+    res.status(500).json({
+      message: "Signup failed",
+      error: err.message
+    });
+
   }
 };
 
-// ========== LOGIN ==========
+
+/* =====================================================
+   LOGIN
+===================================================== */
 export const login = async (req, res) => {
+
   const { email, password } = req.body;
 
   try {
+
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({
+        message: "Invalid credentials"
+      });
     }
 
     if (user.password !== password) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, profile: user.profile },
+      {
+        id: user._id,
+        role: user.role,
+        profile: user.profile
+      },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: "1h" }
     );
 
     res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
-      },
+        role: user.role
+      }
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Login failed', error: err.message });
+
+    console.error("Login Error:", err);
+
+    res.status(500).json({
+      message: "Login failed",
+      error: err.message
+    });
+
   }
 };

@@ -12,7 +12,8 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
     role: "worker",
-    mobileNumber: ""
+    mobileNumber: "",
+    address: ""
   });
 
   const [loading, setLoading] = useState(false);
@@ -36,10 +37,20 @@ const Signup = () => {
       return;
     }
 
-    if (formData.role === "worker" && !formData.mobileNumber) {
-      setError("Mobile number is required for workers");
-      setLoading(false);
-      return;
+    if (formData.role === "worker") 
+    {
+      if(!formData.mobileNumber)
+      {
+        setError("Mobile number is required for worker registration");
+        setLoading(false);
+        return;
+      }
+      if(!formData.address)
+      {
+        setError("Address required for worker registration");
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -48,7 +59,8 @@ const Signup = () => {
         formData.email,
         formData.password,
         formData.role,
-        formData.mobileNumber
+        formData.mobileNumber,
+        formData.address
       );
 
       // store session
@@ -109,11 +121,12 @@ const Signup = () => {
               required
             >
               <option value="worker">Worker</option>
-              <option value="admin">Admin</option>
+              {/* <option value="admin">Admin</option> */}
             </select>
           </div>
 
           {formData.role === "worker" && (
+            <>
             <div className="form-group">
               <label>Mobile Number</label>
               <input
@@ -126,6 +139,19 @@ const Signup = () => {
                 required
               />
             </div>
+
+             <div className="form-group">
+                <label>Address</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Enter your residential address"
+                  required
+                />
+              </div>
+            </>
           )}
 
           <div className="form-group">
