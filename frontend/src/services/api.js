@@ -148,6 +148,10 @@ class ApiService {
     return res.data;
   }
 
+  async deleteWorker(id) {
+  const res = await api.delete(`/admin/workers/${id}`);
+  return res.data;
+}
   /* ---------- WORKER ---------- */
 
   async getAssignmentsForWorker() {

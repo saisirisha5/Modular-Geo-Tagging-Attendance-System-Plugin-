@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import apiService from '../services/api';
 import AssignmentManager from './AssignmentManager';
+import ManageWorkers from './ManageWorkers';
 import './AdminHomepage.css';
 
 const AdminHomepage = () => {
@@ -68,6 +69,42 @@ const AdminHomepage = () => {
     );
   }
 
+  if (currentView === 'workers') {
+      return (
+        <div className="admin-container">
+
+          <div className="admin-header">
+            <div className="header-content">
+
+              <h1 className="admin-title">Manage Workers</h1>
+
+              <div className="user-info">
+
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="back-btn"
+                >
+                  ← Back to Dashboard
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="logout-btn"
+                >
+                  Logout
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+
+          <ManageWorkers />
+
+        </div>
+      );
+    }
+
   return (
     <div className="admin-container">
 
@@ -109,7 +146,10 @@ const AdminHomepage = () => {
 
           </div>
 
-          <div className="dashboard-card">
+        <div
+            className="dashboard-card"
+            onClick={() => setCurrentView('workers')}
+          >
 
             <div className="card-icon">👥</div>
 
