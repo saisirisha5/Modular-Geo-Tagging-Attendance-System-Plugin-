@@ -5,7 +5,7 @@
   margin: 0 auto;
 }
 
-.header {
+.assignment-tabs-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -186,7 +186,7 @@
   line-height: 1.4;
 }
 
-.loading {
+.assignment-loading {
   display: flex;
   align-items: center;
   justify-content: center;

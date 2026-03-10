@@ -231,14 +231,14 @@ const AssignmentViewer = () => {
   ========================== */
 
   if (loading) {
-    return <div className="loading">Loading your assignments...</div>;
+    return <div className="assignment-loading">Loading your assignments...</div>;
   }
 
   return (
 
     <div className="assignment-viewer">
 
-      <div className="header">
+     <div className="assignment-tabs-header">
 
         <div className="tab-buttons">
 
