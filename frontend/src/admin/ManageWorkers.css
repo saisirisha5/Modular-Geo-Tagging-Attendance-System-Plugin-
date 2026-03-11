@@ -105,6 +105,20 @@
   font-weight: 500;
 }
 
+.worker-photo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.worker-photo img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
 /* Loading */
 
 .loading {

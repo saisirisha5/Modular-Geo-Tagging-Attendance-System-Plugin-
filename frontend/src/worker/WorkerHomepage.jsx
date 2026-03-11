@@ -4,6 +4,8 @@ import apiService from '../services/api';
 import AssignmentViewer from './AssignmentViewer';
 import './WorkerHomepage.css';
 
+const IMAGE_BASE_URL = "http://localhost:5000";
+
 const WorkerHomepage = () => {
 
   const navigate = useNavigate();
@@ -74,10 +76,25 @@ const WorkerHomepage = () => {
 
           <h1 className="worker-title">Worker Dashboard</h1>
 
-          <div className="worker-user-info">
+         <div className="worker-user-info">
 
-            <span className="worker-welcome-text">Welcome, {user.name}</span>
+            <div className="worker-profile">
 
+              <img
+                src={
+                  user.profilePhoto
+                    ? `${IMAGE_BASE_URL}/${user.profilePhoto}`
+                    : "/default-avatar.png"
+                }
+                alt={user.name}
+                className="worker-profile-img"
+              />
+
+              <span className="worker-welcome-text">
+                Welcome, {user.name}
+              </span>
+
+            </div>
             <button
               onClick={handleLogout}
               className="worker-logout-btn"

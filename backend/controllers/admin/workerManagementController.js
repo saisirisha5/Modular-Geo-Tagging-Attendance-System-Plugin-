@@ -25,12 +25,13 @@ export const getAllWorkers = async (req, res) => {
      })
       .select("name email");
 
-    const formattedWorkers = workers.map(worker => ({
+   const formattedWorkers = workers.map(worker => ({
       id: worker._id,
       name: worker.name,
       email: worker.email,
       mobileNumber: worker.profile?.mobileNumber || null,
-      address: worker.profile?.address || null
+      address: worker.profile?.address || null,
+      profilePhoto: worker.profile?.profilePhoto || null
     }));
 
     res.status(200).json({
@@ -84,7 +85,10 @@ export const getWorkerById = async (req, res) => {
         name: worker.name,
         email: worker.email,
         mobileNumber: worker.profile.mobileNumber,
-        address: worker.profile.address
+        address: worker.profile.address,
+        profilePhoto: worker.profile.profilePhoto,
+        aadharFrontImage: worker.profile.aadharFrontImage,
+        aadharBackImage: worker.profile.aadharBackImage
       }
     });
 

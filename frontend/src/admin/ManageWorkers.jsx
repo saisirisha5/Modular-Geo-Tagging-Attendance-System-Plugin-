@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import apiService from "../services/api";
 import "./ManageWorkers.css";
 
+const IMAGE_BASE_URL = "http://localhost:5000";
+
 const ManageWorkers = () => {
 
   const [workers, setWorkers] = useState([]);
@@ -58,9 +60,17 @@ const ManageWorkers = () => {
 
   };
 
+  /* =========================
+     LOADING STATE
+  ========================= */
+
   if (loading) {
     return <div className="loading">Loading workers...</div>;
   }
+
+  /* =========================
+     UI
+  ========================= */
 
   return (
     <div className="workers-manager">
@@ -78,7 +88,21 @@ const ManageWorkers = () => {
 
             <div key={worker.id} className="worker-card">
 
+              {/* Worker Profile Photo */}
+              <div className="worker-photo">
+                <img
+                  src={
+                    worker.profilePhoto
+                      ? `${IMAGE_BASE_URL}/${worker.profilePhoto}`
+                      : "/default-avatar.png"
+                  }
+                  alt={worker.name}
+                />
+              </div>
+
+              {/* Worker Header */}
               <div className="worker-header">
+
                 <h4>{worker.name}</h4>
 
                 <button
@@ -90,6 +114,7 @@ const ManageWorkers = () => {
 
               </div>
 
+              {/* Worker Details */}
               <div className="worker-details">
 
                 <p>

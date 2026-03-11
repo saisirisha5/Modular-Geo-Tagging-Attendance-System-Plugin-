@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
    SIGNUP
 ===================================================== */
 export const signup = async (req, res) => {
-  const { name, email, password, role, mobileNumber, address } = req.body;
+  const { name, email, password, role, mobileNumber, address, aadharNumber } = req.body;
 
   try {
 
@@ -48,12 +48,32 @@ export const signup = async (req, res) => {
         });
       }
 
-      profile = await Worker.create({
-        name,
-        mobileNumber,
-        address
-      });
+      const files = req.files || {};
+          /* ---------- IMAGE PATHS ---------- */
 
+       const profilePhoto = files.profilePhoto?.[0]?.path;
+  const aadharFrontImage = files.aadharFrontImage?.[0]?.path;
+  const aadharBackImage = files.aadharBackImage?.[0]?.path;
+  
+        /* ---------- CHECK REQUIRED FILES ---------- */
+
+        if (!profilePhoto || !aadharFrontImage || !aadharBackImage) {
+          return res.status(400).json({
+            message: "Profile photo and Aadhaar images are required"
+          });
+        }
+
+        /* ---------- CREATE WORKER PROFILE ---------- */
+
+        profile = await Worker.create({
+          name,
+          mobileNumber,
+          address,
+          aadharNumber,
+          profilePhoto,
+          aadharFrontImage,
+          aadharBackImage
+        });
     }
 
     /* ---------- INVALID ROLE ---------- */
@@ -119,7 +139,10 @@ export const login = async (req, res) => {
 
   try {
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate({
+      path: "profile",
+      model: "WorkerProfile"
+    });
 
     if (!user) {
       return res.status(400).json({
@@ -150,7 +173,8 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        profilePhoto: user.profile?.profilePhoto || null
       }
     });
 

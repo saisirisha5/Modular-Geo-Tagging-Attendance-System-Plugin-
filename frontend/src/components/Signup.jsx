@@ -6,24 +6,39 @@ import "./Auth.css";
 const Signup = () => {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "worker",
-    mobileNumber: "",
-    address: ""
-  });
+ const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  role: "worker",
+  mobileNumber: "",
+  address: "",
+  aadharNumber: "",
+  profilePhoto: null,
+  aadharFrontImage: null,
+  aadharBackImage: null
+});
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+
+    const { name, value, files } = e.target;
+
+    if (files) {
+      setFormData({
+        ...formData,
+        [name]: files[0]
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+
   };
 
   const handleSubmit = async (e) => {
@@ -54,14 +69,7 @@ const Signup = () => {
     }
 
     try {
-      const data = await apiService.signup(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role,
-        formData.mobileNumber,
-        formData.address
-      );
+     const data = await apiService.signup(formData);
 
       // store session
       apiService.setUserSession(data.token, data.user);
@@ -136,6 +144,52 @@ const Signup = () => {
                 onChange={handleChange}
                 placeholder="Enter 10-digit mobile number"
                 pattern="[0-9]{10}"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+            <label>Aadhaar Number</label>
+            <input
+              type="text"
+              name="aadharNumber"
+              value={formData.aadharNumber}
+              onChange={handleChange}
+              placeholder="Enter 12 digit Aadhaar number"
+              pattern="[0-9]{12}"
+              required
+            />
+          </div>
+
+            <div className="form-group">
+              <label>Profile Photo</label>
+              <input
+                type="file"
+                name="profilePhoto"
+                accept="image/*"
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Aadhaar Front Image</label>
+              <input
+                type="file"
+                name="aadharFrontImage"
+                accept="image/*"
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Aadhaar Back Image</label>
+              <input
+                type="file"
+                name="aadharBackImage"
+                accept="image/*"
+                onChange={handleChange}
                 required
               />
             </div>

@@ -80,18 +80,33 @@ class ApiService {
     return res.data;
   }
 
-  async signup(name, email, password, role, mobileNumber, address) {
-    const res = await api.post("/auth/signup", {
-      name,
-      email,
-      password,
-      role,
-      mobileNumber,
-      address
-    });
+    async signup(formData) {
 
-    return res.data;
-  }
+      const data = new FormData();
+
+      data.append("name", formData.name);
+      data.append("email", formData.email);
+      data.append("password", formData.password);
+      data.append("role", formData.role);
+
+      if (formData.role === "worker") {
+        data.append("mobileNumber", formData.mobileNumber);
+        data.append("address", formData.address);
+        data.append("aadharNumber", formData.aadharNumber);
+
+        data.append("profilePhoto", formData.profilePhoto);
+        data.append("aadharFrontImage", formData.aadharFrontImage);
+        data.append("aadharBackImage", formData.aadharBackImage);
+      }
+
+      const res = await api.post("/auth/signup", data, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      return res.data;
+    }
 
   /* ---------- SESSION ---------- */
 

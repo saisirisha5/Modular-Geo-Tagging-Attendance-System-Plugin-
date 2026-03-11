@@ -146,6 +146,20 @@
   font-weight: 600;
 }
 
+.worker-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.worker-profile-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .worker-header-content {

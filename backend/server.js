@@ -18,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth',authRoutes);
 app.use('/api/admin',adminRoutes);
 app.use('/api/worker',workerRoutes);
+app.use("/uploads", express.static("uploads"));
 
 //connection to db and running server
 (async () => {
