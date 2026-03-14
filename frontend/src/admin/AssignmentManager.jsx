@@ -19,6 +19,7 @@ const AssignmentManager = () => {
     address: '',
     timeSlot: { start: '', end: '' },
     requiredDurationMinutes: '',
+    title:'',
     description: ''
   });
 
@@ -91,6 +92,7 @@ const AssignmentManager = () => {
         location: selectedLocation,
         timeSlot: formData.timeSlot,
         requiredDurationMinutes: Number(formData.requiredDurationMinutes),
+        title: formData.title,
         description: formData.description
       };
 
@@ -112,6 +114,7 @@ const AssignmentManager = () => {
         address: '',
         timeSlot: { start: '', end: '' },
         requiredDurationMinutes: '',
+        title: '',
         description: ''
       });
 
@@ -138,6 +141,7 @@ const AssignmentManager = () => {
       address: assignment.address,
       timeSlot: assignment.timeSlot,
       requiredDurationMinutes: assignment.requiredDurationMinutes,
+      title: assignment.title,
       description: assignment.description
     });
 
@@ -321,6 +325,18 @@ const AssignmentManager = () => {
               />
             </div>
 
+            {/* TITLE */}
+            <div className="form-group">
+              <label>Title</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+              />
+            </div>
+
             {/* DESCRIPTION */}
             <div className="form-group">
               <label>Description</label>
@@ -386,6 +402,7 @@ const AssignmentManager = () => {
                   <p><strong>Time:</strong> {assignment.timeSlot.start} – {assignment.timeSlot.end}</p>
                   <p><strong>Duration:</strong> {assignment.requiredDurationMinutes} minutes</p>
                   <p><strong>Address:</strong> {assignment.address}</p>
+                  <p><strong>Title:</strong>{assignment.title}</p>
                   {assignment.description && (
                     <p><strong>Description:</strong> {assignment.description}</p>
                   )}

@@ -16,6 +16,7 @@ export const createAssignment = async (req, res) => {
       location,
       timeSlot,
       requiredDurationMinutes,
+      title,
       description
     } = req.body;
 
@@ -31,7 +32,8 @@ export const createAssignment = async (req, res) => {
       !location?.lat ||
       !location?.lng ||
       !timeSlot?.start ||
-      !timeSlot?.end
+      !timeSlot?.end ||
+      !title 
     ) {
       return res.status(400).json({
         error: 'Missing required fields'
@@ -97,7 +99,8 @@ export const createAssignment = async (req, res) => {
         },
         timeSlot,
         requiredDurationMinutes: requiredDurationMinutes || 0,
-        description: description || ''
+        description: description || '',
+        title: title || ''
       });
 
       await assignment.save();
@@ -221,7 +224,8 @@ export const updateAssignment = async (req, res) => {
       location,
       timeSlot,
       requiredDurationMinutes,
-      description
+      description,
+      title
     } = req.body;
 
     const adminUser = await User.findById(req.user.id);
@@ -275,8 +279,8 @@ export const updateAssignment = async (req, res) => {
     assignment.timeSlot = timeSlot || assignment.timeSlot;
     assignment.requiredDurationMinutes =
       requiredDurationMinutes ?? assignment.requiredDurationMinutes;
-    assignment.description =
-      description ?? assignment.description;
+    assignment.description = description ?? assignment.description;
+    assignment.title = title ?? assignment.title;
 
     await assignment.save();
     await assignment.populate('worker', 'name');

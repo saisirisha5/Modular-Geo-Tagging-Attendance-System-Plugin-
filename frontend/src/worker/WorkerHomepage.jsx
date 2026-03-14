@@ -223,8 +223,7 @@ const WorkerHomepage = () => {
           </div>
 
         </div>
-      
-
+        
       </div>
 
     </div>

@@ -5,6 +5,11 @@
   margin: 0 auto;
 }
 
+.assignment-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
 .assignment-tabs-header {
   display: flex;
   justify-content: space-between;
@@ -129,7 +134,11 @@
 .assignment-date {
   font-weight: 700;
   color: #333;
-  font-size: 16px;
+  font-size: 14px;
+
+  display: block;
+  width: fit-content;
+  margin-left: auto;
 }
 
 .assignment-time {
@@ -139,6 +148,12 @@
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
+
+  display: inline-flex;
+  align-items: center;
+
+  width: fit-content;
+  margin-left: auto;
 }
 
 .assignment-content {

@@ -1,409 +1,374 @@
-import { useState, useEffect } from 'react';
-import './AssignmentViewer.css';
-import apiService from '../services/api';
-import { getDistanceFromLatLonInMeters } from '../utils/distance';
+  import { useState, useEffect } from 'react';
+  import './AssignmentViewer.css';
+  import apiService from '../services/api';
+  import { getDistanceFromLatLonInMeters } from '../utils/distance';
 
-const AssignmentViewer = () => {
+  const AssignmentViewer = () => {
 
-  const [assignments, setAssignments] = useState([]);
-  const [todayAssignments, setTodayAssignments] = useState([]);
-  const [upcomingAssignments, setUpcomingAssignments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
-  const [addressCache, setAddressCache] = useState({});
-  const [currentLocation, setCurrentLocation] = useState(null);
+    const [assignments, setAssignments] = useState([]);
+    const [todayAssignments, setTodayAssignments] = useState([]);
+    const [upcomingAssignments, setUpcomingAssignments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState('all');
+    const [currentLocation, setCurrentLocation] = useState(null);
 
-  /* ==========================
-     FETCH ASSIGNMENTS
-  ========================== */
+    /* ==========================
+      FETCH ASSIGNMENTS
+    ========================== */
 
-  useEffect(() => {
+    useEffect(() => {
 
-    const fetchAssignments = async () => {
+      const fetchAssignments = async () => {
+
+        try {
+
+          setLoading(true);
+
+          const allData = await apiService.getAssignmentsForWorker();
+          const todayData = await apiService.getTodayAssignments();
+          const upcomingData = await apiService.getUpcomingAssignments();
+
+          setAssignments(allData.assignments || []);
+          setTodayAssignments(todayData.assignments || []);
+          setUpcomingAssignments(upcomingData.assignments || []);
+
+        } catch (err) {
+
+          setError('Failed to fetch assignments');
+          console.error(err);
+
+        } finally {
+
+          setLoading(false);
+
+        }
+      };
+
+      fetchAssignments();
+
+    }, []);
+
+    /* ==========================
+      UTILS
+    ========================== */
+
+    const openInMaps = (lat, lng) => {
+
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+        '_blank'
+      );
+
+    };
+
+    const formatDate = (dateString) => {
+
+      const date = new Date(dateString);
+
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+    };
+
+    const getCurrentAssignments = () => {
+
+      if (activeTab === 'today') return todayAssignments;
+      if (activeTab === 'upcoming') return upcomingAssignments;
+      return assignments;
+
+    };
+
+    const getTabTitle = () => {
+
+      if (activeTab === 'today') {
+        return `Today's Assignments (${todayAssignments.length})`;
+      }
+
+      if (activeTab === 'upcoming') {
+        return `Upcoming Assignments (${upcomingAssignments.length})`;
+      }
+
+      return `All Assignments (${assignments.length})`;
+
+    };
+
+    /* ==========================
+      GET LIVE USER LOCATION
+    ========================== */
+
+    useEffect(() => {
+
+      if (!navigator.geolocation) return;
+
+      const watchId = navigator.geolocation.watchPosition(
+
+        ({ coords }) =>
+          setCurrentLocation({
+            lat: coords.latitude,
+            lng: coords.longitude
+          }),
+
+        err => console.warn('Geo error', err),
+
+        { enableHighAccuracy: true }
+
+      );
+
+      return () => navigator.geolocation.clearWatch(watchId);
+
+    }, []);
+
+    /* ==========================
+      CHECK IN / CHECK OUT
+    ========================== */
+
+    const handleCheck = async (assignment, type) => {
+
+      if (!currentLocation) {
+
+        alert('Current location not available');
+        return;
+
+      }
+
+      const { lat, lng } = currentLocation;
 
       try {
 
-        setLoading(true);
+        let data;
 
-        const allData = await apiService.getAssignmentsForWorker();
-        const todayData = await apiService.getTodayAssignments();
-        const upcomingData = await apiService.getUpcomingAssignments();
+        if (type === "checkIn") {
 
-        setAssignments(allData.assignments || []);
-        setTodayAssignments(todayData.assignments || []);
-        setUpcomingAssignments(upcomingData.assignments || []);
+          data = await apiService.startAttendance(
+            assignment._id,
+            lat,
+            lng
+          );
+
+        } else {
+
+          data = await apiService.endAttendance(
+            assignment._id,
+            lat,
+            lng
+          );
+
+        }
+
+        alert(data.message || `✅ ${type} successful`);
 
       } catch (err) {
 
-        setError('Failed to fetch assignments');
-        console.error(err);
+        console.error("Attendance Error:", err);
 
-      } finally {
-
-        setLoading(false);
+        alert(err.response?.data?.error || `${type} failed`);
 
       }
     };
 
-    fetchAssignments();
+/* ========================
+      DATE FORMAT (12 hrs format)
+  =========================*/
+      const formatTime = (time) => {
 
-  }, []);
+        if (!time) return "";
 
-  /* ==========================
-     REVERSE GEOCODE
-  ========================== */
+        const [hours, minutes] = time.split(":").map(Number);
 
-  const fetchAddress = async (lat, lng) => {
+        const date = new Date();
+        date.setHours(hours);
+        date.setMinutes(minutes);
 
-    const key = `${lat},${lng}`;
+        return date.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true
+        });
 
-    if (addressCache[key]) return addressCache[key];
+      };
 
-    try {
+    /* ==========================
+      RENDER
+    ========================== */
 
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
-      );
-
-      const data = await res.json();
-
-      const address = data.display_name || `${lat}, ${lng}`;
-
-      setAddressCache(prev => ({ ...prev, [key]: address }));
-
-      return address;
-
-    } catch {
-
-      return `${lat}, ${lng}`;
-
-    }
-  };
-
-  useEffect(() => {
-
-    const fetchAllAddresses = async () => {
-
-      const all = [...assignments, ...todayAssignments, ...upcomingAssignments];
-
-      for (const a of all) {
-
-        const key = `${a.location.lat},${a.location.lng}`;
-
-        if (!addressCache[key]) {
-          await fetchAddress(a.location.lat, a.location.lng);
-        }
-
-      }
-    };
-
-    if (assignments.length > 0) {
-      fetchAllAddresses();
+    if (loading) {
+      return <div className="assignment-loading">Loading your assignments...</div>;
     }
 
-  }, [assignments, todayAssignments, upcomingAssignments]);
+    return (
 
-  /* ==========================
-     UTILS
-  ========================== */
+      <div className="assignment-viewer">
 
-  const openInMaps = (lat, lng) => {
+      <div className="assignment-tabs-header">
 
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-      '_blank'
-    );
+          <div className="tab-buttons">
 
-  };
+            <button
+              className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              All ({assignments.length})
+            </button>
 
-  const formatDate = (dateString) => {
+            <button
+              className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`}
+              onClick={() => setActiveTab('today')}
+            >
+              Today ({todayAssignments.length})
+            </button>
 
-    const date = new Date(dateString);
+            <button
+              className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upcoming')}
+            >
+              Upcoming ({upcomingAssignments.length})
+            </button>
 
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-
-  };
-
-  const getCurrentAssignments = () => {
-
-    if (activeTab === 'today') return todayAssignments;
-    if (activeTab === 'upcoming') return upcomingAssignments;
-    return assignments;
-
-  };
-
-  const getTabTitle = () => {
-
-    if (activeTab === 'today') {
-      return `Today's Assignments (${todayAssignments.length})`;
-    }
-
-    if (activeTab === 'upcoming') {
-      return `Upcoming Assignments (${upcomingAssignments.length})`;
-    }
-
-    return `All Assignments (${assignments.length})`;
-
-  };
-
-  /* ==========================
-     GET LIVE USER LOCATION
-  ========================== */
-
-  useEffect(() => {
-
-    if (!navigator.geolocation) return;
-
-    const watchId = navigator.geolocation.watchPosition(
-
-      ({ coords }) =>
-        setCurrentLocation({
-          lat: coords.latitude,
-          lng: coords.longitude
-        }),
-
-      err => console.warn('Geo error', err),
-
-      { enableHighAccuracy: true }
-
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-
-  }, []);
-
-  /* ==========================
-     CHECK IN / CHECK OUT
-  ========================== */
-
-  const handleCheck = async (assignment, type) => {
-
-    if (!currentLocation) {
-
-      alert('Current location not available');
-      return;
-
-    }
-
-    const { lat, lng } = currentLocation;
-
-    try {
-
-      let data;
-
-      if (type === "checkIn") {
-
-        data = await apiService.startAttendance(
-          assignment._id,
-          lat,
-          lng
-        );
-
-      } else {
-
-        data = await apiService.endAttendance(
-          assignment._id,
-          lat,
-          lng
-        );
-
-      }
-
-      alert(data.message || `✅ ${type} successful`);
-
-    } catch (err) {
-
-      console.error("Attendance Error:", err);
-
-      alert(err.response?.data?.error || `${type} failed`);
-
-    }
-  };
-
-  /* ==========================
-     RENDER
-  ========================== */
-
-  if (loading) {
-    return <div className="assignment-loading">Loading your assignments...</div>;
-  }
-
-  return (
-
-    <div className="assignment-viewer">
-
-     <div className="assignment-tabs-header">
-
-        <div className="tab-buttons">
-
-          <button
-            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
-            All ({assignments.length})
-          </button>
-
-          <button
-            className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`}
-            onClick={() => setActiveTab('today')}
-          >
-            Today ({todayAssignments.length})
-          </button>
-
-          <button
-            className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upcoming')}
-          >
-            Upcoming ({upcomingAssignments.length})
-          </button>
-
-        </div>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      <div className="assignments-container">
-
-        <h3>{getTabTitle()}</h3>
-
-        {getCurrentAssignments().length === 0 ? (
-
-          <div className="no-assignments">
-            <div className="no-assignments-icon">📋</div>
-            <p>No assignments found</p>
-            <small>Check back later for new assignments</small>
           </div>
+        </div>
 
-        ) : (
+        {error && <div className="error-message">{error}</div>}
 
-          <div className="assignments-grid">
+        <div className="assignments-container">
 
-            {getCurrentAssignments().map((assignment) => {
+          <h3>{getTabTitle()}</h3>
 
-              const now = new Date();
+          {getCurrentAssignments().length === 0 ? (
 
-              const endTime = new Date(
-                `${assignment.date}T${assignment.timeSlot.end}`
-              );
+            <div className="no-assignments">
+              <div className="no-assignments-icon">📋</div>
+              <p>No assignments found</p>
+              <small>Check back later for new assignments</small>
+            </div>
 
-              const overdue = now > endTime;
+          ) : (
 
-              const distance = currentLocation
-                ? getDistanceFromLatLonInMeters(
-                    currentLocation.lat,
-                    currentLocation.lng,
-                    assignment.location.lat,
-                    assignment.location.lng
-                  ).toFixed(0)
-                : null;
+            <div className="assignments-grid">
 
-              return (
+              {getCurrentAssignments().map((assignment) => {
 
-                <div
-                  key={assignment._id}
-                  className={`assignment-card ${overdue ? 'overdue' : ''}`}
-                >
+                const now = new Date();
 
-                  <div className="assignment-header">
+                const endTime = new Date(
+                  `${assignment.date}T${assignment.timeSlot.end}`
+                );
 
-                    <div className="assignment-date">
-                      {formatDate(assignment.date)}
+                const overdue = now > endTime;
+
+                const distance = currentLocation
+                  ? getDistanceFromLatLonInMeters(
+                      currentLocation.lat,
+                      currentLocation.lng,
+                      assignment.location.lat,
+                      assignment.location.lng
+                    ).toFixed(0)
+                  : null;
+
+                return (
+
+                  <div
+                    key={assignment._id}
+                    className={`assignment-card ${overdue ? 'overdue' : ''}`}
+                  >
+
+                    <div className="assignment-header">
+
+                      <div className="assignment-title">
+                        <strong> {assignment.title || 'No Title'} </strong>   
+                      </div>
+
                     </div>
 
-                    <div className="assignment-time">
-                      {assignment.timeSlot.start} - {assignment.timeSlot.end}
-                    </div>
+                    <div className="assignment-content">
+          
+                      <div className="assignment-date">
+                        {formatDate(assignment.date)}
+                      </div>
 
-                  </div>
+                      <div className="assignment-time">
+                       🕒{formatTime(assignment.timeSlot.start)} - {formatTime(assignment.timeSlot.end)}
+                      </div>
 
-                  <div className="assignment-content">
+                      <div className="assignment-duration">
+                        <span className="duration-badge">
+                          {assignment.requiredDurationMinutes} min
+                        </span>
+                      </div>
 
-                    <div className="assignment-duration">
-                      <span className="duration-badge">
-                        {assignment.requiredDurationMinutes} min
-                      </span>
-                    </div>
+                      <div className="assignment-location">
 
-                    <div className="assignment-location">
-
-                      <strong>📍 Location:</strong>
+                        <strong>📍 Location:</strong>
 
                       <p>
-                        {addressCache[
-                          `${assignment.location.lat},${assignment.location.lng}`
-                        ] ||
-                          `${assignment.location.lat}, ${assignment.location.lng}`}
+                        {assignment.address || "Address not available"}
                       </p>
 
-                      {distance && <small>Distance: {distance} m</small>}
+                        <button
+                          className="map-btn"
+                          onClick={() =>
+                            openInMaps(
+                              assignment.location.lat,
+                              assignment.location.lng
+                            )
+                          }
+                        >
+                          🌍 Open in Google Maps
+                        </button>
+
+                      </div>
+
+                      {assignment.description && (
+
+                        <div className="assignment-description">
+                          <strong>📝 Description:</strong>
+                          <p>{assignment.description}</p>
+                        </div>
+
+                      )}
+
+                      <div className="assignment-admin">
+                        <strong>👤 Assigned by:</strong>
+                        <p>{assignment.assignedBy?.name || 'Admin'}</p>
+                      </div>
+
+                    </div>
+
+                    <div className="assignment-actions">
 
                       <button
-                        className="map-btn"
-                        onClick={() =>
-                          openInMaps(
-                            assignment.location.lat,
-                            assignment.location.lng
-                          )
-                        }
+                        className="checkin-btn"
+                        onClick={() => handleCheck(assignment, 'checkIn')}
                       >
-                        🌍 Open in Google Maps
+                        ✅ Check In
+                      </button>
+
+                      <button
+                        className="checkout-btn"
+                        onClick={() => handleCheck(assignment, 'checkOut')}
+                      >
+                        ⏹️ Check Out
                       </button>
 
                     </div>
 
-                    {assignment.description && (
-
-                      <div className="assignment-description">
-                        <strong>📝 Description:</strong>
-                        <p>{assignment.description}</p>
-                      </div>
-
-                    )}
-
-                    <div className="assignment-admin">
-                      <strong>👤 Assigned by:</strong>
-                      <p>{assignment.assignedBy?.name || 'Admin'}</p>
-                    </div>
-
                   </div>
 
-                  <div className="assignment-actions">
+                );
+              })}
 
-                    <button
-                      className="checkin-btn"
-                      onClick={() => handleCheck(assignment, 'checkIn')}
-                    >
-                      ✅ Check In
-                    </button>
+            </div>
 
-                    <button
-                      className="checkout-btn"
-                      onClick={() => handleCheck(assignment, 'checkOut')}
-                    >
-                      ⏹️ Check Out
-                    </button>
+          )}
 
-                  </div>
-
-                </div>
-
-              );
-            })}
-
-          </div>
-
-        )}
+        </div>
 
       </div>
+    );
+  };
 
-    </div>
-  );
-};
-
-export default AssignmentViewer;
+  export default AssignmentViewer;
