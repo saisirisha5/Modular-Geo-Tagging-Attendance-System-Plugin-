@@ -68,6 +68,82 @@ const WorkerHomepage = () => {
     );
   }
 
+      if (currentView === 'workhistory') {
+        return (
+          <div className="worker-container">
+
+            <div className="worker-header">
+              <div className="worker-header-content">
+
+                <h1 className="worker-title">Work History</h1>
+
+                <div className="worker-user-info">
+
+                  <button
+                    onClick={() => setCurrentView('dashboard')}
+                    className="worker-back-btn"
+                  >
+                    ← Back to Dashboard
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="worker-logout-btn"
+                  >
+                    Logout
+                  </button>
+
+                </div>
+
+              </div>
+            </div>
+
+            <div className="worker-main">
+              <h2>Work analytics and attendance reports will appear here</h2>
+            </div>
+
+          </div>
+        );
+      }
+
+    if (currentView === 'profile') {
+      return (
+        <div className="worker-container">
+
+          <div className="worker-header">
+            <div className="worker-header-content">
+
+              <h1 className="worker-title">Profile</h1>
+
+              <div className="worker-user-info">
+
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="worker-back-btn"
+                >
+                  ← Back to Dashboard
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="worker-logout-btn"
+                >
+                  Logout
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+
+          <div className="worker-main">
+            <h2>Worker profile settings will appear here</h2>
+          </div>
+
+        </div>
+      );
+    }
+
   return (
     <div className="worker-container">
 
@@ -108,68 +184,46 @@ const WorkerHomepage = () => {
       </div>
 
       <div className="worker-main">
-
-        <div className="worker-dashboard-grid">
+      <div className="worker-dashboard-grid">
 
           <div
             className="worker-dashboard-card"
             onClick={() => setCurrentView('assignments')}
           >
-
             <div className="worker-card-icon">📋</div>
 
             <div className="worker-card-content">
               <h3>My Assignments</h3>
               <p>View and manage assigned tasks</p>
             </div>
-
           </div>
 
-          <div className="worker-dashboard-card">
-
-            <div className="worker-card-icon">🌍</div>
-
-            <div className="worker-card-content">
-              <h3>My Location</h3>
-              <p>View and update your location</p>
-            </div>
-
-          </div>
-
-          <div className="worker-dashboard-card">
-
+          <div
+            className="worker-dashboard-card"
+            onClick={() => setCurrentView('workhistory')}
+          >
             <div className="worker-card-icon">📊</div>
 
             <div className="worker-card-content">
               <h3>Work History</h3>
-              <p>View your work history and reports</p>
+              <p>Analytics, attendance and reports</p>
             </div>
-
           </div>
 
-          <div className="worker-dashboard-card">
-
-            <div className="worker-card-icon">⏰</div>
-
-            <div className="worker-card-content">
-              <h3>Time Tracking</h3>
-              <p>Track your working hours</p>
-            </div>
-
-          </div>
-
-          <div className="worker-dashboard-card">
-
+          <div
+            className="worker-dashboard-card"
+            onClick={() => setCurrentView('profile')}
+          >
             <div className="worker-card-icon">👤</div>
 
             <div className="worker-card-content">
               <h3>Profile</h3>
-              <p>Update your profile information</p>
+              <p>Update personal and location details</p>
             </div>
-
           </div>
 
         </div>
+      
 
       </div>
 
