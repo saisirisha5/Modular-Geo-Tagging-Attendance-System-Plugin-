@@ -208,7 +208,39 @@ class ApiService {
 
     return res.data;
   }
+
+  async updateWorkerProfile(data) {
+    const res = await api.put(
+      "/worker/profile",
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      }
+    );
+    return res.data;
+  }
+
+  async updateResidenceLocation(lat, lng) {
+
+    const res = await api.put("/worker/residence-location", {
+      residenceLat: lat,
+      residenceLng: lng
+    });
+
+    return res.data;
+  }
+
+  async getWorkerProfile() {
+  
+    const res = await api.get("/worker/profile");
+  
+    return res.data;
+  
+  }
 }
+
 
 /* ==========================
    EXPORT

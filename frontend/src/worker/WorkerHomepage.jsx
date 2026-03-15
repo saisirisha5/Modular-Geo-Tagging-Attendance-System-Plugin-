@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import apiService from '../services/api';
 import AssignmentViewer from './AssignmentViewer';
+import WorkerProfile from './WorkerProfile';
 import './WorkerHomepage.css';
 
 const IMAGE_BASE_URL = "http://localhost:5000";
@@ -137,7 +138,7 @@ const WorkerHomepage = () => {
           </div>
 
           <div className="worker-main">
-            <h2>Worker profile settings will appear here</h2>
+            <WorkerProfile/>
           </div>
 
         </div>

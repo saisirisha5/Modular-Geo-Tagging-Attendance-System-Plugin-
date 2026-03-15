@@ -52,8 +52,8 @@ export const signup = async (req, res) => {
           /* ---------- IMAGE PATHS ---------- */
 
        const profilePhoto = files.profilePhoto?.[0]?.path;
-  const aadharFrontImage = files.aadharFrontImage?.[0]?.path;
-  const aadharBackImage = files.aadharBackImage?.[0]?.path;
+       const aadharFrontImage = files.aadharFrontImage?.[0]?.path;
+       const aadharBackImage = files.aadharBackImage?.[0]?.path;
   
         /* ---------- CHECK REQUIRED FILES ---------- */
 
