@@ -1,374 +1,274 @@
-  import { useState, useEffect } from 'react';
-  import './AssignmentViewer.css';
-  import apiService from '../services/api';
-  import { getDistanceFromLatLonInMeters } from '../utils/distance';
+import { useState, useEffect } from 'react';
+import './AssignmentViewer.css';
+import apiService from '../services/api';
+import { getDistanceFromLatLonInMeters } from '../utils/distance';
 
-  const AssignmentViewer = () => {
+const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
 
-    const [assignments, setAssignments] = useState([]);
-    const [todayAssignments, setTodayAssignments] = useState([]);
-    const [upcomingAssignments, setUpcomingAssignments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState('all');
-    const [currentLocation, setCurrentLocation] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [todayAssignments, setTodayAssignments] = useState([]);
+  const [upcomingAssignments, setUpcomingAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [currentLocation, setCurrentLocation] = useState(null);
 
-    /* ==========================
-      FETCH ASSIGNMENTS
-    ========================== */
-
-    useEffect(() => {
-
-      const fetchAssignments = async () => {
-
-        try {
-
-          setLoading(true);
-
-          const allData = await apiService.getAssignmentsForWorker();
-          const todayData = await apiService.getTodayAssignments();
-          const upcomingData = await apiService.getUpcomingAssignments();
-
-          setAssignments(allData.assignments || []);
-          setTodayAssignments(todayData.assignments || []);
-          setUpcomingAssignments(upcomingData.assignments || []);
-
-        } catch (err) {
-
-          setError('Failed to fetch assignments');
-          console.error(err);
-
-        } finally {
-
-          setLoading(false);
-
-        }
-      };
-
-      fetchAssignments();
-
-    }, []);
-
-    /* ==========================
-      UTILS
-    ========================== */
-
-    const openInMaps = (lat, lng) => {
-
-      window.open(
-        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-        '_blank'
-      );
-
-    };
-
-    const formatDate = (dateString) => {
-
-      const date = new Date(dateString);
-
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-
-    };
-
-    const getCurrentAssignments = () => {
-
-      if (activeTab === 'today') return todayAssignments;
-      if (activeTab === 'upcoming') return upcomingAssignments;
-      return assignments;
-
-    };
-
-    const getTabTitle = () => {
-
-      if (activeTab === 'today') {
-        return `Today's Assignments (${todayAssignments.length})`;
-      }
-
-      if (activeTab === 'upcoming') {
-        return `Upcoming Assignments (${upcomingAssignments.length})`;
-      }
-
-      return `All Assignments (${assignments.length})`;
-
-    };
-
-    /* ==========================
-      GET LIVE USER LOCATION
-    ========================== */
-
-    useEffect(() => {
-
-      if (!navigator.geolocation) return;
-
-      const watchId = navigator.geolocation.watchPosition(
-
-        ({ coords }) =>
-          setCurrentLocation({
-            lat: coords.latitude,
-            lng: coords.longitude
-          }),
-
-        err => console.warn('Geo error', err),
-
-        { enableHighAccuracy: true }
-
-      );
-
-      return () => navigator.geolocation.clearWatch(watchId);
-
-    }, []);
-
-    /* ==========================
-      CHECK IN / CHECK OUT
-    ========================== */
-
-    const handleCheck = async (assignment, type) => {
-
-      if (!currentLocation) {
-
-        alert('Current location not available');
-        return;
-
-      }
-
-      const { lat, lng } = currentLocation;
-
+  /* ==========================
+     FETCH ASSIGNMENTS
+  ========================== */
+  useEffect(() => {
+    const fetchAssignments = async () => {
       try {
+        setLoading(true);
 
-        let data;
+        const allData = await apiService.getAssignmentsForWorker();
+        const todayData = await apiService.getTodayAssignments();
+        const upcomingData = await apiService.getUpcomingAssignments();
 
-        if (type === "checkIn") {
-
-          data = await apiService.startAttendance(
-            assignment._id,
-            lat,
-            lng
-          );
-
-        } else {
-
-          data = await apiService.endAttendance(
-            assignment._id,
-            lat,
-            lng
-          );
-
-        }
-
-        alert(data.message || `✅ ${type} successful`);
+        setAssignments(allData.assignments || []);
+        setTodayAssignments(todayData.assignments || []);
+        setUpcomingAssignments(upcomingData.assignments || []);
 
       } catch (err) {
-
-        console.error("Attendance Error:", err);
-
-        alert(err.response?.data?.error || `${type} failed`);
-
+        setError('Failed to fetch assignments');
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
 
-/* ========================
-      DATE FORMAT (12 hrs format)
-  =========================*/
-      const formatTime = (time) => {
+    fetchAssignments();
+  }, []);
 
-        if (!time) return "";
+  /* ==========================
+     LOCATION
+  ========================== */
+  useEffect(() => {
+    if (!navigator.geolocation) return;
 
-        const [hours, minutes] = time.split(":").map(Number);
+    const watchId = navigator.geolocation.watchPosition(
+      ({ coords }) =>
+        setCurrentLocation({
+          lat: coords.latitude,
+          lng: coords.longitude
+        }),
+      err => console.warn('Geo error', err),
+      { enableHighAccuracy: true }
+    );
 
-        const date = new Date();
-        date.setHours(hours);
-        date.setMinutes(minutes);
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
-        return date.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true
-        });
+  /* ==========================
+     UTILS
+  ========================== */
 
-      };
+  const openInMaps = (lat, lng) => {
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+      '_blank'
+    );
+  };
 
-    /* ==========================
-      RENDER
-    ========================== */
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
-    if (loading) {
-      return <div className="assignment-loading">Loading your assignments...</div>;
+  const formatTime = (time) => {
+    if (!time) return "";
+
+    const [hours, minutes] = time.split(":").map(Number);
+
+    const date = new Date();
+    date.setHours(hours);
+    date.setMinutes(minutes);
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+  };
+
+  const getCurrentAssignments = () => {
+    if (activeTab === 'today') return todayAssignments;
+    if (activeTab === 'upcoming') return upcomingAssignments;
+    return assignments;
+  };
+
+  const getTabTitle = () => {
+    if (activeTab === 'today') {
+      return `Today's Assignments (${todayAssignments.length})`;
     }
+    if (activeTab === 'upcoming') {
+      return `Upcoming Assignments (${upcomingAssignments.length})`;
+    }
+    return `All Assignments (${assignments.length})`;
+  };
 
-    return (
+  /* ==========================
+     RENDER
+  ========================== */
 
-      <div className="assignment-viewer">
+  if (loading) {
+    return <div className="assignment-loading">Loading your assignments...</div>;
+  }
+
+  return (
+    <div className="assignment-viewer">
 
       <div className="assignment-tabs-header">
+        <div className="tab-buttons">
+          <button
+            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            All ({assignments.length})
+          </button>
 
-          <div className="tab-buttons">
+          <button
+            className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`}
+            onClick={() => setActiveTab('today')}
+          >
+            Today ({todayAssignments.length})
+          </button>
 
-            <button
-              className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all')}
-            >
-              All ({assignments.length})
-            </button>
-
-            <button
-              className={`tab-btn ${activeTab === 'today' ? 'active' : ''}`}
-              onClick={() => setActiveTab('today')}
-            >
-              Today ({todayAssignments.length})
-            </button>
-
-            <button
-              className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
-              onClick={() => setActiveTab('upcoming')}
-            >
-              Upcoming ({upcomingAssignments.length})
-            </button>
-
-          </div>
+          <button
+            className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setActiveTab('upcoming')}
+          >
+            Upcoming ({upcomingAssignments.length})
+          </button>
         </div>
+      </div>
 
-        {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message">{error}</div>}
 
-        <div className="assignments-container">
+      <div className="assignments-container">
+        <h3>{getTabTitle()}</h3>
 
-          <h3>{getTabTitle()}</h3>
+        {getCurrentAssignments().length === 0 ? (
+          <div className="no-assignments">
+            <div className="no-assignments-icon">📋</div>
+            <p>No assignments found</p>
+          </div>
+        ) : (
 
-          {getCurrentAssignments().length === 0 ? (
+          <div className="assignments-grid">
 
-            <div className="no-assignments">
-              <div className="no-assignments-icon">📋</div>
-              <p>No assignments found</p>
-              <small>Check back later for new assignments</small>
-            </div>
+            {getCurrentAssignments().map((assignment) => {
 
-          ) : (
+              const now = new Date();
+              const startTime = new Date(`${assignment.date}T${assignment.timeSlot.start}`);
+              const endTime = new Date(`${assignment.date}T${assignment.timeSlot.end}`);
 
-            <div className="assignments-grid">
+              /* ==========================
+                 STATUS LOGIC
+              ========================== */
+              let status = "pending";
 
-              {getCurrentAssignments().map((assignment) => {
+              if (assignment.attendanceStatus === "completed") {
+                status = "completed";
+              } else if (assignment.attendanceStatus === "in-progress") {
+                status = "in-progress";
+              } else if (now > endTime) {
+                status = "missed";
+              }
 
-                const now = new Date();
+              return (
 
-                const endTime = new Date(
-                  `${assignment.date}T${assignment.timeSlot.end}`
-                );
+                <div
+                  key={assignment._id}
+                  className="assignment-card"
+                  onClick={() => {
+                    setSelectedAssignment(assignment);
+                    setCurrentView('attendance');
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
 
-                const overdue = now > endTime;
+                  {/* HEADER */}
+                  <div className="assignment-header">
 
-                const distance = currentLocation
-                  ? getDistanceFromLatLonInMeters(
-                      currentLocation.lat,
-                      currentLocation.lng,
-                      assignment.location.lat,
-                      assignment.location.lng
-                    ).toFixed(0)
-                  : null;
-
-                return (
-
-                  <div
-                    key={assignment._id}
-                    className={`assignment-card ${overdue ? 'overdue' : ''}`}
-                  >
-
-                    <div className="assignment-header">
-
-                      <div className="assignment-title">
-                        <strong> {assignment.title || 'No Title'} </strong>   
-                      </div>
-
+                    <div className="assignment-title">
+                      <strong>{assignment.title || 'No Title'}</strong>
                     </div>
 
-                    <div className="assignment-content">
-          
-                      <div className="assignment-date">
-                        {formatDate(assignment.date)}
-                      </div>
-
-                      <div className="assignment-time">
-                       🕒{formatTime(assignment.timeSlot.start)} - {formatTime(assignment.timeSlot.end)}
-                      </div>
-
-                      <div className="assignment-duration">
-                        <span className="duration-badge">
-                          {assignment.requiredDurationMinutes} min
-                        </span>
-                      </div>
-
-                      <div className="assignment-location">
-
-                        <strong>📍 Location:</strong>
-
-                      <p>
-                        {assignment.address || "Address not available"}
-                      </p>
-
-                        <button
-                          className="map-btn"
-                          onClick={() =>
-                            openInMaps(
-                              assignment.location.lat,
-                              assignment.location.lng
-                            )
-                          }
-                        >
-                          🌍 Open in Google Maps
-                        </button>
-
-                      </div>
-
-                      {assignment.description && (
-
-                        <div className="assignment-description">
-                          <strong>📝 Description:</strong>
-                          <p>{assignment.description}</p>
-                        </div>
-
-                      )}
-
-                      <div className="assignment-admin">
-                        <strong>👤 Assigned by:</strong>
-                        <p>{assignment.assignedBy?.name || 'Admin'}</p>
-                      </div>
-
-                    </div>
-
-                    <div className="assignment-actions">
-
-                      <button
-                        className="checkin-btn"
-                        onClick={() => handleCheck(assignment, 'checkIn')}
-                      >
-                        ✅ Check In
-                      </button>
-
-                      <button
-                        className="checkout-btn"
-                        onClick={() => handleCheck(assignment, 'checkOut')}
-                      >
-                        ⏹️ Check Out
-                      </button>
-
+                    {/* STATUS BADGE */}
+                    <div className={`status-badge ${status}`}>
+                      {status === "completed" && "✔ Attendance Marked"}
+                      {status === "in-progress" && "⏳ In Progress"}
+                      {status === "pending" && "🕒 Pending"}
+                      {status === "missed" && "✖ Marked Invalid"}
                     </div>
 
                   </div>
 
-                );
-              })}
+                  {/* CONTENT */}
+                  <div className="assignment-content">
 
-            </div>
+                    <div className="assignment-date">
+                      {formatDate(assignment.date)}
+                    </div>
 
-          )}
+                    <div className="assignment-time">
+                      🕒 {formatTime(assignment.timeSlot.start)} - {formatTime(assignment.timeSlot.end)}
+                    </div>
 
-        </div>
+                    <div className="assignment-duration">
+                      <span className="duration-badge">
+                        {assignment.requiredDurationMinutes} min
+                      </span>
+                    </div>
 
+                    <div className="assignment-location">
+                      <strong>📍 Location:</strong>
+
+                      <p>{assignment.address || "Address not available"}</p>
+
+                      <button
+                        className="map-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openInMaps(
+                            assignment.location.lat,
+                            assignment.location.lng
+                          );
+                        }}
+                      >
+                        🌍 Open in Google Maps
+                      </button>
+                    </div>
+
+                    {assignment.description && (
+                      <div className="assignment-description">
+                        <strong>📝 Description:</strong>
+                        <p>{assignment.description}</p>
+                      </div>
+                    )}
+
+                    <div className="assignment-admin">
+                      <strong>👤 Assigned by:</strong>
+                      <p>{assignment.assignedBy?.name || 'Admin'}</p>
+                    </div>
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+        )}
       </div>
-    );
-  };
+    </div>
+  );
+};
 
-  export default AssignmentViewer;
+export default AssignmentViewer;

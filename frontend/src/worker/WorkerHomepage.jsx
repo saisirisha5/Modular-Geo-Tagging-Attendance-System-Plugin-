@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import apiService from '../services/api';
-import AssignmentViewer from './AssignmentViewer';
+import AssignmentViewer from "./AssignmentViewer";
 import WorkerProfile from './WorkerProfile';
+import WorkerAttendancePage from "./WorkerAttendancePage";
 import './WorkerHomepage.css';
 
 const IMAGE_BASE_URL = "http://localhost:5000";
@@ -13,16 +14,14 @@ const WorkerHomepage = () => {
 
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
 
+  /* AUTH CHECK */
   useEffect(() => {
-
     const session = apiService.getUserSession();
 
-    if (session) {
-      setUser(session.user);
-    } else {
-      navigate("/login");
-    }
+    if (session) setUser(session.user);
+    else navigate("/login");
 
   }, [navigate]);
 
@@ -33,6 +32,21 @@ const WorkerHomepage = () => {
 
   if (!user) return <div className="worker-loading">Loading...</div>;
 
+  /* =========================
+     ATTENDANCE PAGE
+  ========================= */
+  if (currentView === 'attendance') {
+    return (
+      <WorkerAttendancePage
+        assignment={selectedAssignment}
+        goBack={() => setCurrentView('assignments')}
+      />
+    );
+  }
+
+  /* =========================
+     ASSIGNMENTS
+  ========================= */
   if (currentView === 'assignments') {
     return (
       <div className="worker-container">
@@ -63,88 +77,100 @@ const WorkerHomepage = () => {
           </div>
         </div>
 
-        <AssignmentViewer />
+        <AssignmentViewer
+          setCurrentView={setCurrentView}
+          setSelectedAssignment={setSelectedAssignment}
+        />
 
       </div>
     );
   }
 
-      if (currentView === 'workhistory') {
-        return (
-          <div className="worker-container">
+  /* =========================
+     WORK HISTORY
+  ========================= */
+  if (currentView === 'workhistory') {
+    return (
+      <div className="worker-container">
 
-            <div className="worker-header">
-              <div className="worker-header-content">
+        <div className="worker-header">
+          <div className="worker-header-content">
 
-                <h1 className="worker-title">Work History</h1>
+            <h1 className="worker-title">Work History</h1>
 
-                <div className="worker-user-info">
+            <div className="worker-user-info">
 
-                  <button
-                    onClick={() => setCurrentView('dashboard')}
-                    className="worker-back-btn"
-                  >
-                    ← Back to Dashboard
-                  </button>
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="worker-back-btn"
+              >
+                ← Back to Dashboard
+              </button>
 
-                  <button
-                    onClick={handleLogout}
-                    className="worker-logout-btn"
-                  >
-                    Logout
-                  </button>
+              <button
+                onClick={handleLogout}
+                className="worker-logout-btn"
+              >
+                Logout
+              </button>
 
-                </div>
-
-              </div>
-            </div>
-
-            <div className="worker-main">
-              <h2>Work analytics and attendance reports will appear here</h2>
             </div>
 
           </div>
-        );
-      }
-
-    if (currentView === 'profile') {
-      return (
-        <div className="worker-container">
-
-          <div className="worker-header">
-            <div className="worker-header-content">
-
-              <h1 className="worker-title">Profile</h1>
-
-              <div className="worker-user-info">
-
-                <button
-                  onClick={() => setCurrentView('dashboard')}
-                  className="worker-back-btn"
-                >
-                  ← Back to Dashboard
-                </button>
-
-                <button
-                  onClick={handleLogout}
-                  className="worker-logout-btn"
-                >
-                  Logout
-                </button>
-
-              </div>
-
-            </div>
-          </div>
-
-          <div className="worker-main">
-            <WorkerProfile/>
-          </div>
-
         </div>
-      );
-    }
 
+        <div className="worker-main">
+          <h2>Work analytics and attendance reports will appear here</h2>
+        </div>
+
+      </div>
+    );
+  }
+
+  /* =========================
+     PROFILE
+  ========================= */
+  if (currentView === 'profile') {
+    return (
+      <div className="worker-container">
+
+        <div className="worker-header">
+          <div className="worker-header-content">
+
+            <h1 className="worker-title">Profile</h1>
+
+            <div className="worker-user-info">
+
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="worker-back-btn"
+              >
+                ← Back to Dashboard
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="worker-logout-btn"
+              >
+                Logout
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+
+        <div className="worker-main">
+          <WorkerProfile />
+        </div>
+
+      </div>
+    );
+  }
+
+  /* =========================
+     DASHBOARD
+  ========================= */
   return (
     <div className="worker-container">
 
@@ -153,10 +179,9 @@ const WorkerHomepage = () => {
 
           <h1 className="worker-title">Worker Dashboard</h1>
 
-         <div className="worker-user-info">
+          <div className="worker-user-info">
 
             <div className="worker-profile">
-
               <img
                 src={
                   user.profilePhoto
@@ -170,8 +195,8 @@ const WorkerHomepage = () => {
               <span className="worker-welcome-text">
                 Welcome, {user.name}
               </span>
-
             </div>
+
             <button
               onClick={handleLogout}
               className="worker-logout-btn"
@@ -185,14 +210,13 @@ const WorkerHomepage = () => {
       </div>
 
       <div className="worker-main">
-      <div className="worker-dashboard-grid">
+        <div className="worker-dashboard-grid">
 
           <div
             className="worker-dashboard-card"
             onClick={() => setCurrentView('assignments')}
           >
             <div className="worker-card-icon">📋</div>
-
             <div className="worker-card-content">
               <h3>My Assignments</h3>
               <p>View and manage assigned tasks</p>
@@ -204,7 +228,6 @@ const WorkerHomepage = () => {
             onClick={() => setCurrentView('workhistory')}
           >
             <div className="worker-card-icon">📊</div>
-
             <div className="worker-card-content">
               <h3>Work History</h3>
               <p>Analytics, attendance and reports</p>
@@ -216,7 +239,6 @@ const WorkerHomepage = () => {
             onClick={() => setCurrentView('profile')}
           >
             <div className="worker-card-icon">👤</div>
-
             <div className="worker-card-content">
               <h3>Profile</h3>
               <p>Update personal and location details</p>
@@ -224,7 +246,6 @@ const WorkerHomepage = () => {
           </div>
 
         </div>
-        
       </div>
 
     </div>

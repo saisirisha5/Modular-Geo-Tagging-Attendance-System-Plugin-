@@ -34,7 +34,7 @@ return (
         {/* Worker Route */}
         
        <Route
-          path="/worker"
+          path="/worker/*"
           element={
             <ProtectedRoute role="worker">
               <WorkerHomepage />

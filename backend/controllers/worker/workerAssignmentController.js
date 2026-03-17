@@ -1,5 +1,6 @@
 import Assignment from '../../models/assignmentSchema.js';
 import User from '../../models/userSchema.js';
+import Attendance from '../../models/attendanceSchema.js';
 
 // GET /worker/assignments - Get all assignments for the logged-in worker
 export const getWorkerAssignments = async (req, res) => {
@@ -16,11 +17,29 @@ export const getWorkerAssignments = async (req, res) => {
       .populate('assignedBy', 'name')
       .sort({ date: 1, 'timeSlot.start': 1 });
 
-    res.status(200).json({
-      message: "Assignments retrieved successfully",
-      count: assignments.length,
-      assignments
-    });
+      const enrichedAssignments = await Promise.all(
+        assignments.map(async (assignment) => {
+
+          const attendance = await Attendance.findOne({
+            worker: workerUser.profile,
+            assignment: assignment._id
+          });
+
+          return {
+            ...assignment.toObject(),
+            attendanceStatus: attendance
+              ? attendance.status
+              : "not-marked"
+          };
+        })
+      );
+
+      res.status(200).json({
+        message: "Assignments retrieved successfully",
+        count: enrichedAssignments.length,
+        assignments: enrichedAssignments
+      });
+
   } catch (err) {
     console.error("Worker Assignments Fetch Error:", err);
     res.status(500).json({ error: "Failed to fetch assignments", details: err.message });

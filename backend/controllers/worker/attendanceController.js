@@ -1,133 +1,179 @@
-// controllers/worker/attendanceController.js
 import Assignment from '../../models/assignmentSchema.js';
 import Attendance from '../../models/attendanceSchema.js';
 import User from '../../models/userSchema.js';
-import haversine from 'haversine-distance'; // npm install haversine-distance
+import haversine from 'haversine-distance';
 
-// CONFIG: allowed location error margin in meters
-const LOCATION_RADIUS_METERS = 100000;// added area only due to api issues and increased the area to 100000 m
+// LOCATION LIMIT (100 meters)
+const LOCATION_RADIUS_METERS = 100;
 
-// POST /worker/attendance/start
-export const startAttendance = async (req, res) => {
+/* =====================================================
+   CHECK-IN
+   POST /worker/attendance/check-in
+===================================================== */
+export const checkIn = async (req, res) => {
   try {
     const workerUserId = req.user.id;
-    const { assignmentId, location } = req.body; // location = { lat, lng }
-     // console.log("Received body:", req.body);
+    const { assignmentId, location, photoUrl } = req.body;
 
-    if (!assignmentId || !location?.lat || !location?.lng) {
-       console.log("Missing required fields");
-      return res.status(400).json({ error: "Missing assignmentId or location" });
+    if (!assignmentId || !location?.lat || !location?.lng || !photoUrl) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
-   //  console.log("Assignment ID:", assignmentId);
-     //console.log("Latitude:", location.lat, "Longitude:", location.lng);
-    
-    // Validate worker
+
+    // Worker validation
     const worker = await User.findById(workerUserId);
     if (!worker || worker.role !== 'worker') {
-      return res.status(403).json({ error: "Access denied. Worker role required." });
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    // Get assignment
+    // Assignment validation
     const assignment = await Assignment.findById(assignmentId);
     if (!assignment || assignment.worker.toString() !== worker.profile.toString()) {
-      return res.status(404).json({ error: "Assignment not found or not yours" });
+      return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Check time slot start validity
     const now = new Date();
+
     const slotStart = new Date(`${assignment.date}T${assignment.timeSlot.start}`);
     const slotEnd = new Date(`${assignment.date}T${assignment.timeSlot.end}`);
 
+    // TIME VALIDATION
     if (now < slotStart || now > slotEnd) {
-      return res.status(400).json({ error: "Attendance can only be started within the assigned time slot" });
+      return res.status(400).json({
+        error: "Invalid time",
+        failureReason: { type: "TIME", message: "Outside time slot" }
+      });
     }
 
-    // Check location radius
-    const assignmentLoc = {
-      lat: assignment.location.lat,
-      lng: assignment.location.lng
-    };
-    const distance = haversine(assignmentLoc, location);
+    // LOCATION VALIDATION
+    const distance = haversine(
+      { lat: assignment.location.lat, lng: assignment.location.lng },
+      location
+    );
 
     if (distance > LOCATION_RADIUS_METERS) {
-      return res.status(400).json({ error: "You are not at the assigned location" });
+      return res.status(400).json({
+        error: "Invalid location",
+        failureReason: { type: "LOCATION", message: "Too far from assignment location" }
+      });
     }
 
-    // Save attendance record
-    const attendance = new Attendance({
+    // Prevent multiple check-ins
+    const existing = await Attendance.findOne({
       worker: worker.profile,
-      assignment: assignmentId,
-      startTime: now,
-      startLocation: location,
-      status: 'in-progress'
+      assignment: assignmentId
     });
 
-    await attendance.save();
+    if (existing && existing.status !== 'pending') {
+      return res.status(400).json({ error: "Already checked-in" });
+    }
 
-    res.status(201).json({ message: "Attendance started", attendance });
+    // CREATE / UPDATE attendance
+    const attendance = await Attendance.findOneAndUpdate(
+      { worker: worker.profile, assignment: assignmentId },
+      {
+        worker: worker.profile,
+        assignment: assignmentId,
+        checkInTime: now,
+        checkInLocation: location,
+        checkInPhoto: photoUrl,
+        status: 'checked-in',
+        failureReason: null
+      },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      message: "Check-in successful",
+      attendance
+    });
+
   } catch (err) {
-    console.error("Start Attendance Error:", err);
+    console.error("Check-in Error:", err);
     res.status(500).json({ error: "Server error", details: err.message });
   }
 };
 
-// POST /worker/attendance/end
-export const endAttendance = async (req, res) => {
+
+/* =====================================================
+   CHECK-OUT
+   POST /worker/attendance/check-out
+===================================================== */
+export const checkOut = async (req, res) => {
   try {
     const workerUserId = req.user.id;
-    const { assignmentId, location } = req.body;
+    const { assignmentId, location, photoUrl } = req.body;
 
-    if (!assignmentId || !location?.lat || !location?.lng) {
-      return res.status(400).json({ error: "Missing assignmentId or location" });
+    if (!assignmentId || !location?.lat || !location?.lng || !photoUrl) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     const worker = await User.findById(workerUserId);
     if (!worker || worker.role !== 'worker') {
-      return res.status(403).json({ error: "Access denied. Worker role required." });
+      return res.status(403).json({ error: "Access denied" });
     }
 
     const assignment = await Assignment.findById(assignmentId);
     if (!assignment || assignment.worker.toString() !== worker.profile.toString()) {
-      return res.status(404).json({ error: "Assignment not found or not yours" });
+      return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Find ongoing attendance
+    // Find existing attendance
     const attendance = await Attendance.findOne({
       worker: worker.profile,
       assignment: assignmentId,
-      status: 'in-progress'
+      status: 'checked-in'
     });
 
     if (!attendance) {
-      return res.status(400).json({ error: "No in-progress attendance found" });
+      return res.status(400).json({ error: "Check-in not found" });
     }
 
     const now = new Date();
-    const assignmentLoc = {
-      lat: assignment.location.lat,
-      lng: assignment.location.lng
-    };
-    const distance = haversine(assignmentLoc, location);
+
+    // LOCATION VALIDATION
+    const distance = haversine(
+      { lat: assignment.location.lat, lng: assignment.location.lng },
+      location
+    );
 
     if (distance > LOCATION_RADIUS_METERS) {
-      return res.status(400).json({ error: "You are not at the assigned location" });
+      return res.status(400).json({
+        error: "Invalid location",
+        failureReason: { type: "LOCATION", message: "Too far from assignment location" }
+      });
     }
 
-    // Duration check
-    const durationMinutes = (now - attendance.startTime) / (1000 * 60);
+    // DURATION VALIDATION
+    const durationMinutes = (now - attendance.checkInTime) / (1000 * 60);
+
     if (durationMinutes < assignment.requiredDurationMinutes) {
-      return res.status(400).json({ error: `Required duration not completed. You have worked ${Math.floor(durationMinutes)} mins.` });
+      return res.status(400).json({
+        error: `Worked only ${Math.floor(durationMinutes)} mins`,
+        failureReason: {
+          type: "DURATION",
+          message: "Required duration not met"
+        }
+      });
     }
 
-    attendance.endTime = now;
-    attendance.endLocation = location;
+    // UPDATE attendance
+    attendance.checkOutTime = now;
+    attendance.checkOutLocation = location;
+    attendance.checkOutPhoto = photoUrl;
+    attendance.durationMinutes = durationMinutes;
+    attendance.locationDeviationMeters = distance;
     attendance.status = 'completed';
+    attendance.failureReason = null;
+
     await attendance.save();
 
-    res.status(200).json({ message: "Attendance completed", attendance });
+    res.status(200).json({
+      message: "Check-out successful",
+      attendance
+    });
+
   } catch (err) {
-    console.error("End Attendance Error:", err);
+    console.error("Check-out Error:", err);
     res.status(500).json({ error: "Server error", details: err.message });
   }
 };
-

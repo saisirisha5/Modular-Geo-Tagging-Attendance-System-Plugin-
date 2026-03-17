@@ -5,7 +5,7 @@ import {
   getTodayAssignments,
   getUpcomingAssignments
 } from '../controllers/worker/workerAssignmentController.js';
-import {startAttendance,endAttendance} from '../controllers/worker/attendanceController.js'
+import { checkIn, checkOut } from '../controllers/worker/attendanceController.js'
 import { updateWorkerProfile, updateResidenceLocation, getWorkerProfile } from "../controllers/worker/workerProfileController.js";
 
 import { upload } from "../middlewares/multerMiddleware.js";
@@ -14,8 +14,8 @@ import verifyToken from '../middlewares/authMiddleware.js';
 const router = express.Router();
 // localhost:5000/api/worker/
 //Worker geolocation check-in/out
-router.post('/attendance/start',verifyToken,startAttendance);
-router.post('/attendance/end',verifyToken,endAttendance);
+router.post('/attendance/check-in', verifyToken, checkIn);
+router.post('/attendance/check-out', verifyToken, checkOut);
 
 // Worker assignment routes
 router.get('/assignments', verifyToken, getWorkerAssignments);

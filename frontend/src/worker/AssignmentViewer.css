@@ -211,6 +211,31 @@
   font-weight: 600;
 }
 
+.status-badge {
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+}
+
+.status-badge.completed {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+}
+
+.status-badge.in-progress {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.status-badge.pending {
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+.status-badge.missed {
+  background: linear-gradient(135deg, #ff6a6a, #ff0000);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .assignment-viewer {

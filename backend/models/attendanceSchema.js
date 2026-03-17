@@ -1,19 +1,51 @@
 import mongoose from 'mongoose';
 
 const attendanceSchema = new mongoose.Schema({
-  worker: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkerProfile', required: true },
-  assignment: { type: mongoose.Schema.Types.ObjectId, ref: 'Assignment', required: true },
-  startTime: { type: Date, required: true },
-  startLocation: {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true }
+  worker: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'WorkerProfile', 
+    required: true 
   },
-  endTime: { type: Date },
-  endLocation: {
-    lat: { type: Number },
-    lng: { type: Number }
+
+  assignment: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Assignment', 
+    required: true 
   },
-  status: { type: String, enum: ['in-progress', 'completed'], default: 'in-progress' }
+
+  checkInTime: { type: Date },
+  checkInLocation: {
+    lat: Number,
+    lng: Number
+  },
+  checkInPhoto: { type: String }, // Cloudinary URL
+
+  checkOutTime: { type: Date },
+  checkOutLocation: {
+    lat: Number,
+    lng: Number
+  },
+  checkOutPhoto: { type: String },
+
+  durationMinutes: { type: Number },
+  locationDeviationMeters: { type: Number },
+
+  status: {
+    type: String,
+    enum: ['pending', 'checked-in', 'completed', 'rejected'],
+    default: 'pending'
+  },
+
+  failureReason: {
+    type: {
+      type: String,
+      enum: ['TIME', 'LOCATION', 'PHOTO', 'DURATION']
+    },
+    message: String
+  }
+
 }, { timestamps: true });
+
+attendanceSchema.index({ worker: 1, assignment: 1 }, { unique: true });
 
 export default mongoose.model('Attendance', attendanceSchema);

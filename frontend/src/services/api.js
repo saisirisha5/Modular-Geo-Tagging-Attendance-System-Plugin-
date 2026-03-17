@@ -189,23 +189,21 @@ class ApiService {
     return res.data;
   }
 
-  async startAttendance(assignmentId, lat, lng) {
-    const res = await api.post("/worker/attendance/start", {
-      assignment_id: assignmentId,
-      latitude: lat,
-      longitude: lng
+  async checkIn(assignmentId, lat, lng, photoUrl) {
+    const res = await api.post("/worker/attendance/check-in", {
+      assignmentId,
+      location: { lat, lng },
+      photoUrl
     });
-
     return res.data;
   }
 
-  async endAttendance(assignmentId, lat, lng) {
-    const res = await api.post("/worker/attendance/end", {
-      assignment_id: assignmentId,
-      latitude: lat,
-      longitude: lng
+  async checkOut(assignmentId, lat, lng, photoUrl) {
+    const res = await api.post("/worker/attendance/check-out", {
+      assignmentId,
+      location: { lat, lng },
+      photoUrl
     });
-
     return res.data;
   }
 
