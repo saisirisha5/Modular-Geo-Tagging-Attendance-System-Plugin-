@@ -175,10 +175,15 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
 
               if (assignment.attendanceStatus === "completed") {
                 status = "completed";
-              } else if (assignment.attendanceStatus === "in-progress") {
+              }
+              else if (assignment.attendanceStatus === "checked-in") {
                 status = "in-progress";
-              } else if (now > endTime) {
+              }
+              else if (now > endTime) {
                 status = "missed";
+              }
+              else if (now < startTime) {
+                status = "pending";
               }
 
               return (
@@ -200,13 +205,7 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
                       <strong>{assignment.title || 'No Title'}</strong>
                     </div>
 
-                    {/* STATUS BADGE */}
-                    <div className={`status-badge ${status}`}>
-                      {status === "completed" && "✔ Attendance Marked"}
-                      {status === "in-progress" && "⏳ In Progress"}
-                      {status === "pending" && "🕒 Pending"}
-                      {status === "missed" && "✖ Marked Invalid"}
-                    </div>
+                     <span className="arrow">➜</span>
 
                   </div>
 
@@ -258,8 +257,17 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
                       <p>{assignment.assignedBy?.name || 'Admin'}</p>
                     </div>
 
-                  </div>
+                    <div className="assignment-footer">
 
+                      <div className={`status-badge ${status}`}>
+                        {status === "completed" && "✔ Attendance Marked"}
+                        {status === "in-progress" && "⏳ In Progress"}
+                        {status === "pending" && "🕒 Pending"}
+                        {status === "missed" && "✖ Marked Invalid"}
+                      </div>
+                    </div>
+                    
+                  </div>
                 </div>
               );
             })}

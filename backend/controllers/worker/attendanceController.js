@@ -38,7 +38,7 @@ export const checkIn = async (req, res) => {
 
     // TIME VALIDATION
     if (now < slotStart || now > slotEnd) {
-      return res.status(400).json({
+      return res.status(422).json({
         error: "Invalid time",
         failureReason: { type: "TIME", message: "Outside time slot" }
       });
@@ -63,8 +63,11 @@ export const checkIn = async (req, res) => {
       assignment: assignmentId
     });
 
-    if (existing && existing.status !== 'pending') {
-      return res.status(400).json({ error: "Already checked-in" });
+    if (existing?.status !== 'checked-in') {
+      return res.status(409).json({ error: "Already checked-in" });
+    }
+    if (existing?.status === 'completed') {
+      return res.status(409).json({ error: "Attendance already completed" });
     }
 
     // CREATE / UPDATE attendance
@@ -125,7 +128,7 @@ export const checkOut = async (req, res) => {
     });
 
     if (!attendance) {
-      return res.status(400).json({ error: "Check-in not found" });
+      return res.status(409).json({ error: "Check-in not found" });
     }
 
     const now = new Date();
@@ -137,7 +140,7 @@ export const checkOut = async (req, res) => {
     );
 
     if (distance > LOCATION_RADIUS_METERS) {
-      return res.status(400).json({
+      return res.status(422).json({
         error: "Invalid location",
         failureReason: { type: "LOCATION", message: "Too far from assignment location" }
       });
@@ -147,7 +150,7 @@ export const checkOut = async (req, res) => {
     const durationMinutes = (now - attendance.checkInTime) / (1000 * 60);
 
     if (durationMinutes < assignment.requiredDurationMinutes) {
-      return res.status(400).json({
+      return res.status(422).json({
         error: `Worked only ${Math.floor(durationMinutes)} mins`,
         failureReason: {
           type: "DURATION",

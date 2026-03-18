@@ -225,7 +225,7 @@
 }
 
 .status-badge.in-progress {
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  background: linear-gradient(135deg, #f6a55f, #ed7b2f);
 }
 
 .status-badge.pending {
@@ -234,6 +234,29 @@
 
 .status-badge.missed {
   background: linear-gradient(135deg, #ff6a6a, #ff0000);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.arrow {
+  font-size: 18px;
+  color: #999;
+  transition: transform 0.2s ease;
+}
+
+.assignment-card:hover .arrow {
+  transform: translateX(5px);
+  color: #333;
+}
+
+.assignment-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
 /* Responsive Design */
