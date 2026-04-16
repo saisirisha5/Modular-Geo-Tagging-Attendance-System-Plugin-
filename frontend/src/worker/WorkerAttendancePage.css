@@ -8,7 +8,6 @@
   padding: 30px 20px;
 }
 
-/* CARD */
 .attendance-card {
   max-width: 600px;
   margin: 0 auto;
@@ -20,7 +19,6 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* HEADER */
 .attendance-header {
   display: flex;
   justify-content: space-between;
@@ -34,7 +32,6 @@
   color: #333;
 }
 
-/* BACK BUTTON */
 .attendance-back-btn {
   background: rgba(79, 172, 254, 0.2);
   border: 1px solid rgba(79, 172, 254, 0.4);
@@ -49,7 +46,6 @@
   background: rgba(79, 172, 254, 0.3);
 }
 
-/* INFO */
 .attendance-info {
   margin-bottom: 20px;
 }
@@ -60,7 +56,6 @@
   font-size: 14px;
 }
 
-/* CAMERA */
 .camera-container {
   display: flex;
   flex-direction: column;
@@ -92,7 +87,6 @@
   border: 2px solid #4facfe;
 }
 
-/* BUTTONS */
 .attendance-actions {
   display: flex;
   gap: 12px;
@@ -110,7 +104,6 @@
   transition: all 0.3s ease;
 }
 
-/* Camera buttons */
 .start-camera-btn {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
 }
@@ -119,12 +112,10 @@
   background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
-/* Check-in */
 .checkin-btn {
   background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
-/* Check-out */
 .checkout-btn {
   background: linear-gradient(135deg, #f77062, #fe5196);
 }
@@ -134,14 +125,12 @@
   opacity: 0.9;
 }
 
-/* DISABLED */
 .attendance-actions button:disabled {
   background: #ccc;
   color: #666;
   cursor: not-allowed;
 }
 
-/* ACTION BUTTONS */
 .attendance-actions button {
   flex: 1;
   padding: 12px;
@@ -153,17 +142,14 @@
   transition: all 0.3s ease;
 }
 
-/* CHECK-IN */
 .checkin-btn {
   background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
-/* CHECK-OUT */
 .checkout-btn {
   background: linear-gradient(135deg, #f77062, #fe5196);
 }
 
-/* CAMERA BUTTONS */
 .start-camera-btn {
   background: linear-gradient(135deg, #4facfe, #00f2fe);
 }
@@ -172,13 +158,11 @@
   background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
-/* HOVER */
 .attendance-actions button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 14px rgba(0,0,0,0.2);
 }
 
-/* DISABLED */
 .attendance-actions button:disabled {
   background: #ccc;
   color: #666;
@@ -194,7 +178,7 @@
   border: 2px solid #ddd;
   background: #f5f5f5;
 }
-/* RESPONSIVE */
+
 @media (max-width: 500px) {
   .attendance-card {
     padding: 20px;

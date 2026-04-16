@@ -27,7 +27,6 @@ html, body {
   width: 100%;
 }
 
-/* Remove default button styles */
 button {
   background: none;
   border: none;
@@ -38,7 +37,6 @@ button {
   color: inherit;
 }
 
-/* Remove default input styles */
 input, select, textarea {
   background: none;
   border: none;
@@ -48,24 +46,20 @@ input, select, textarea {
   color: inherit;
 }
 
-/* Remove default link styles */
 a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Remove default list styles */
 ul, ol {
   list-style: none;
 }
 
-/* Ensure images are responsive */
 img {
   max-width: 100%;
   height: auto;
 }
 
-/* Remove default fieldset styles */
 fieldset {
   border: none;
   padding: 0;

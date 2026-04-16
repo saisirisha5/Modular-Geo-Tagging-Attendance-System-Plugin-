@@ -160,7 +160,6 @@
   border: 2px solid #ddd;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .worker-header-content {
     flex-direction: column;

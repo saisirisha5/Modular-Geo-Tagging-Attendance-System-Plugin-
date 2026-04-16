@@ -134,7 +134,6 @@
   text-decoration: underline;
 }
 
-/* Responsive Design */
 @media (max-width: 480px) {
   .auth-container {
     padding: 10px;
