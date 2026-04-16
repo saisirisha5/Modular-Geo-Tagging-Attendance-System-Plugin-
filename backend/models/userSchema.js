@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
 
   profile: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'role', // Dynamically references either Admin or Worker
+    refPath: 'role', // Dynamic reference to Admin or Worker
     required: true
   }
 });

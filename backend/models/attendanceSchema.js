@@ -18,7 +18,7 @@ const attendanceSchema = new mongoose.Schema({
     lat: Number,
     lng: Number
   },
-  checkInPhoto: { type: String }, // Cloudinary URL
+  checkInPhoto: { type: String }, 
 
   checkOutTime: { type: Date },
   checkOutLocation: {

@@ -10,15 +10,15 @@ const testConnection = async () => {
     console.log('DB_URI:', process.env.DB_URI || 'Not set');
     
     await mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/geo-location');
-    console.log('✅ MongoDB connected successfully!');
+    console.log('MongoDB connected successfully!');
     
     // Test if we can access the database
     const collections = await mongoose.connection.db.listCollections().toArray();
-    console.log('📁 Available collections:', collections.map(c => c.name));
+    console.log('Available collections:', collections.map(c => c.name));
     
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
-    console.log('\n💡 Solutions:');
+    console.error('MongoDB connection failed:', error.message);
+    console.log('\nSolutions:');
     console.log('1. Make sure MongoDB is running');
     console.log('2. Check your .env file has DB_URI');
     console.log('3. If using MongoDB Atlas, use the correct connection string');

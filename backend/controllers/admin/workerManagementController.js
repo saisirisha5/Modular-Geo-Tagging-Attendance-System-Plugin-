@@ -127,29 +127,17 @@ export const deleteWorker = async (req, res) => {
         error: "Worker not found"
       });
     }
-
-    /* Delete worker profile */
-
     await WorkerProfile.findByIdAndDelete(worker.profile);
-
-    /* Delete worker assignments */
-
     await Assignment.deleteMany({
       worker: worker.profile
     });
-
-    /* Delete user */
-
     await worker.deleteOne();
-
     res.status(200).json({
       message: "Worker removed successfully"
     });
 
   } catch (err) {
-
     console.error("Delete Worker Error:", err);
-
     res.status(500).json({
       error: err.message
     });

@@ -25,19 +25,13 @@ export const updateWorkerProfile = async (req, res) => {
         error: "Access denied. Worker role required."
       });
     }
-
-    /* Worker profile id */
-
     const workerProfileId = user.profile;
-
     const updateData = {};
-
     if (mobileNumber) updateData.mobileNumber = mobileNumber;
     if (address) updateData.address = address;
     if (aadharNumber) updateData.aadharNumber = aadharNumber;
     if (residenceLat) updateData.residenceLat = residenceLat;
     if (residenceLng) updateData.residenceLng = residenceLng;
-
     if (req.file) {
       updateData.profilePhoto = req.file.path;
     }
@@ -67,21 +61,15 @@ export const updateWorkerProfile = async (req, res) => {
 };
 
 export const getWorkerProfile = async (req, res) => {
-
   try {
-
     const userId = req.user.id;
-
     const user = await User.findById(userId);
-
     if (!user || user.role !== "worker") {
       return res.status(403).json({
         error: "Access denied. Worker role required."
       });
     }
-
     const workerProfile = await WorkerProfile.findById(user.profile);
-
     res.status(200).json({
       user: {
         name: user.name,
@@ -89,17 +77,13 @@ export const getWorkerProfile = async (req, res) => {
       },
       profile: workerProfile
     });
-
   } catch (err) {
 
     console.error("Fetch Worker Profile Error:", err);
-
     res.status(500).json({
       error: "Failed to fetch worker profile"
     });
-
   }
-
 };
 
 /*
@@ -110,27 +94,20 @@ Update worker residence coordinates
 export const updateResidenceLocation = async (req, res) => {
 
   try {
-
     const userId = req.user.id;
-
     const { residenceLat, residenceLng } = req.body;
-
     if (!residenceLat || !residenceLng) {
       return res.status(400).json({
         error: "Latitude and longitude are required"
       });
     }
-
     const user = await User.findById(userId);
-
     if (!user || user.role !== "worker") {
       return res.status(403).json({
         error: "Access denied. Worker role required."
       });
     }
-
     const workerProfileId = user.profile;
-
     await WorkerProfile.findByIdAndUpdate(
       workerProfileId,
       {
@@ -141,20 +118,14 @@ export const updateResidenceLocation = async (req, res) => {
       },
       { new: true }
     );
-
     res.status(200).json({
       message: "Residence location updated successfully"
     });
-
   } catch (err) {
-
     console.error("Residence Location Update Error:", err);
-
     res.status(500).json({
       error: "Failed to update residence location",
       details: err.message
     });
-
   }
-
 };

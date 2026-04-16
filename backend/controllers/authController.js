@@ -12,16 +12,12 @@ export const signup = async (req, res) => {
   const { name, email, password, role, mobileNumber, address, aadharNumber } = req.body;
 
   try {
-
-    /* ---------- CHECK EXISTING USER ---------- */
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return res.status(400).json({
         message: "User already exists"
       });
     }
-
     let profile;
 
     /* ---------- ADMIN SIGNUP ---------- */
@@ -49,13 +45,10 @@ export const signup = async (req, res) => {
       }
 
       const files = req.files || {};
-          /* ---------- IMAGE PATHS ---------- */
 
        const profilePhoto = files.profilePhoto?.[0]?.path;
        const aadharFrontImage = files.aadharFrontImage?.[0]?.path;
        const aadharBackImage = files.aadharBackImage?.[0]?.path;
-  
-        /* ---------- CHECK REQUIRED FILES ---------- */
 
         if (!profilePhoto || !aadharFrontImage || !aadharBackImage) {
           return res.status(400).json({
@@ -75,8 +68,6 @@ export const signup = async (req, res) => {
           aadharBackImage
         });
     }
-
-    /* ---------- INVALID ROLE ---------- */
     else {
       return res.status(400).json({
         message: "Invalid role"
@@ -94,7 +85,6 @@ export const signup = async (req, res) => {
 
     await user.save();
 
-    /* ---------- CREATE TOKEN ---------- */
     const token = jwt.sign(
       {
         id: user._id,
@@ -104,8 +94,6 @@ export const signup = async (req, res) => {
       JWT_SECRET,
       { expiresIn: "1h" }
     );
-
-    /* ---------- RESPONSE ---------- */
     res.status(201).json({
       message: "User registered successfully",
       token,
@@ -118,14 +106,11 @@ export const signup = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Signup Error:", err);
-
     res.status(500).json({
       message: "Signup failed",
       error: err.message
     });
-
   }
 };
 
@@ -179,13 +164,10 @@ export const login = async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("Login Error:", err);
-
     res.status(500).json({
       message: "Login failed",
       error: err.message
     });
-
   }
 };

@@ -32,12 +32,12 @@ const workerProfile = new mongoose.Schema({
   },
   
   aadharFrontImage: {
-    type: String, // will store image path or cloud URL
+    type: String, 
     required: true
   },
 
   aadharBackImage: {
-    type: String, // will store image path or cloud URL
+    type: String,
     required: true
   },
 

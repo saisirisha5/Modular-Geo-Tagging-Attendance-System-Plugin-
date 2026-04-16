@@ -3,7 +3,7 @@ import Attendance from '../../models/attendanceSchema.js';
 import User from '../../models/userSchema.js';
 import haversine from 'haversine-distance';
 
-// LOCATION LIMIT (100 meters)
+// LOCATION BUFFER (100 meters)
 const LOCATION_RADIUS_METERS = 100;
 
 /* =====================================================
@@ -120,7 +120,6 @@ export const checkOut = async (req, res) => {
       return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Find existing attendance
     const attendance = await Attendance.findOne({
       worker: worker.profile,
       assignment: assignmentId,

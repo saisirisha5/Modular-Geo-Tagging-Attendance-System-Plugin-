@@ -151,36 +151,6 @@ export const getAllAssignmentsByAdmin = async (req, res) => {
   }
 };
 
-
-/* =====================================================
-   GET /admin/workers
-===================================================== */
-// export const getAllWorkers = async (req, res) => {
-//   try {
-//     const adminUser = await User.findById(req.user.id);
-//     if (!adminUser || adminUser.role !== 'admin') {
-//       return res.status(403).json({ error: 'Admin access required' });
-//     }
-
-//     const workers = await User.find({ role: 'worker' })
-//       .populate('profile')
-//       .select('email name');
-
-//     const formatted = workers.map(w => ({
-//       id: w._id,
-//       email: w.email,
-//       name: w.name || 'No name',
-//     }));
-
-//     res.status(200).json({ workers: formatted });
-
-//   } catch (err) {
-//     console.error('Fetch Workers Error:', err);
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
-
 /* =====================================================
    GET /admin/assignments/:id
 ===================================================== */
@@ -295,7 +265,6 @@ export const updateAssignment = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 /* =====================================================
    DELETE /admin/assignments/:id

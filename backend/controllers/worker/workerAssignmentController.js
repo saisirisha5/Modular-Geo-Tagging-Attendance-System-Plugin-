@@ -52,7 +52,6 @@ export const getWorkerAssignmentById = async (req, res) => {
     const { id } = req.params;
     const workerUserId = req.user.id;
 
-    // Verify worker role
     const workerUser = await User.findById(workerUserId);
     if (!workerUser || workerUser.role !== 'worker') {
       return res.status(403).json({ error: "Access denied. Worker role required." });
@@ -65,7 +64,6 @@ export const getWorkerAssignmentById = async (req, res) => {
       return res.status(404).json({ error: "Assignment not found" });
     }
 
-    // Check if assignment belongs to this worker
     if (assignment.worker.toString() !== workerUser.profile.toString()) {
       return res.status(403).json({ error: "Access denied. You can only view your own assignments." });
     }
@@ -84,16 +82,11 @@ export const getWorkerAssignmentById = async (req, res) => {
 export const getTodayAssignments = async (req, res) => {
   try {
     const workerUserId = req.user.id;
-
-    // Verify worker role
     const workerUser = await User.findById(workerUserId);
     if (!workerUser || workerUser.role !== 'worker') {
       return res.status(403).json({ error: "Access denied. Worker role required." });
     }
-
-    // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0];
-
     const assignments = await Assignment.find({ 
       worker: workerUser.profile,
       date: today
@@ -117,24 +110,18 @@ export const getTodayAssignments = async (req, res) => {
 export const getUpcomingAssignments = async (req, res) => {
   try {
     const workerUserId = req.user.id;
-
-    // Verify worker role
     const workerUser = await User.findById(workerUserId);
     if (!workerUser || workerUser.role !== 'worker') {
       return res.status(403).json({ error: "Access denied. Worker role required." });
     }
-
-    // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0];
-
     const assignments = await Assignment.find({ 
       worker: workerUser.profile,
       date: { $gte: today }
     })
       .populate('assignedBy', 'name')
       .sort({ date: 1, 'timeSlot.start': 1 })
-      .limit(10); // Limit to next 10 assignments
-
+      .limit(10); 
     res.status(200).json({
       message: "Upcoming assignments retrieved successfully",
       count: assignments.length,
