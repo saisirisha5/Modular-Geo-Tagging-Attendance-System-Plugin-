@@ -29,10 +29,8 @@ const Login = () => {
     try {
       const data = await apiService.login(formData.email, formData.password);
 
-      // store session
       apiService.setUserSession(data.token, data.user);
 
-      // redirect based on role
       if (data.user.role === "admin") {
         navigate("/admin");
       } else if (data.user.role === "worker") {

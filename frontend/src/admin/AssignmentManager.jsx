@@ -23,16 +23,10 @@ const AssignmentManager = () => {
     description: ''
   });
 
-  /* ==========================
-     INITIAL FETCH
-  ========================== */
   useEffect(() => {
     fetchData();
   }, []);
 
-  /* ==========================
-     FORCE MAP RESIZE
-  ========================== */
   useEffect(() => {
     if (showCreateForm) {
       setTimeout(() => {
@@ -41,9 +35,6 @@ const AssignmentManager = () => {
     }
   }, [showCreateForm]);
 
-  /* ==========================
-     FETCH DATA
-  ========================== */
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -62,9 +53,6 @@ const AssignmentManager = () => {
     }
   };
 
-  /* ==========================
-     SUBMIT (CREATE / UPDATE)
-  ========================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -102,7 +90,6 @@ const AssignmentManager = () => {
         await apiService.createAssignment(payload);
       }
 
-      // Reset everything
       setIsEditMode(false);
       setEditingId(null);
       setShowCreateForm(false);
@@ -125,9 +112,6 @@ const AssignmentManager = () => {
     }
   };
 
-  /* ==========================
-     EDIT MODE
-  ========================== */
   const handleEdit = (assignment) => {
     setIsEditMode(true);
     setEditingId(assignment._id);
@@ -148,9 +132,6 @@ const AssignmentManager = () => {
     setSelectedLocation(assignment.location);
   };
 
-  /* ==========================
-     DELETE
-  ========================== */
   const handleDelete = async (assignmentId) => {
     if (!window.confirm('Are you sure you want to delete this assignment?')) return;
 
@@ -184,9 +165,6 @@ const AssignmentManager = () => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {/* ==========================
-         FORM
-      ========================== */}
       {showCreateForm && (
         <div className="create-form">
           <h3>
@@ -359,9 +337,6 @@ const AssignmentManager = () => {
         </div>
       )}
 
-      {/* ==========================
-         LIST
-      ========================== */}
       <div className="assignments-list">
         <h3>All Assignments ({assignments.length})</h3>
 

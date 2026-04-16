@@ -44,8 +44,6 @@ api.interceptors.response.use(
   (error) => {
 
     if (error.response) {
-
-      // Handle expired login
       if (error.response.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -55,7 +53,6 @@ api.interceptors.response.use(
         }
       }
 
-      // Convert backend message into JS Error
       const message =
         error.response.data?.message ||
         error.response.data?.error ||
@@ -240,9 +237,6 @@ class ApiService {
 }
 
 
-/* ==========================
-   EXPORT
-========================== */
 
 const apiService = new ApiService();
 export default apiService;

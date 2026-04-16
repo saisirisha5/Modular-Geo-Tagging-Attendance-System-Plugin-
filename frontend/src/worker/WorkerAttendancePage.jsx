@@ -12,7 +12,6 @@ const WorkerAttendancePage = ({ assignment, goBack }) => {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  /* LOCATION */
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((pos) => {
       setLocation({
@@ -22,7 +21,6 @@ const WorkerAttendancePage = ({ assignment, goBack }) => {
     });
   }, []);
 
-  /* CAMERA */
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -38,10 +36,6 @@ const WorkerAttendancePage = ({ assignment, goBack }) => {
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
-
-    // canvas.width = video.videoWidth;
-    // canvas.height = video.videoHeight;
-
     canvas.width = 300;
     canvas.height = 300;
 
@@ -54,7 +48,6 @@ const WorkerAttendancePage = ({ assignment, goBack }) => {
     if (stream) stream.getTracks().forEach(track => track.stop());
   };
 
-  /* API */
   const handleSubmit = async (type) => {
     if (!capturedImage || !location) {
       alert("Capture photo & location first");

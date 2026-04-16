@@ -16,7 +16,6 @@ const WorkerHomepage = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedAssignment, setSelectedAssignment] = useState(null);
 
-  /* AUTH CHECK */
   useEffect(() => {
     const session = apiService.getUserSession();
 
@@ -32,9 +31,6 @@ const WorkerHomepage = () => {
 
   if (!user) return <div className="worker-loading">Loading...</div>;
 
-  /* =========================
-     ATTENDANCE PAGE
-  ========================= */
   if (currentView === 'attendance') {
     return (
       <WorkerAttendancePage
@@ -44,9 +40,6 @@ const WorkerHomepage = () => {
     );
   }
 
-  /* =========================
-     ASSIGNMENTS
-  ========================= */
   if (currentView === 'assignments') {
     return (
       <div className="worker-container">
@@ -86,9 +79,6 @@ const WorkerHomepage = () => {
     );
   }
 
-  /* =========================
-     WORK HISTORY
-  ========================= */
   if (currentView === 'workhistory') {
     return (
       <div className="worker-container">
@@ -127,9 +117,6 @@ const WorkerHomepage = () => {
     );
   }
 
-  /* =========================
-     PROFILE
-  ========================= */
   if (currentView === 'profile') {
     return (
       <div className="worker-container">
@@ -168,9 +155,6 @@ const WorkerHomepage = () => {
     );
   }
 
-  /* =========================
-     DASHBOARD
-  ========================= */
   return (
     <div className="worker-container">
 

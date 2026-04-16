@@ -13,9 +13,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
   const [activeTab, setActiveTab] = useState('all');
   const [currentLocation, setCurrentLocation] = useState(null);
 
-  /* ==========================
-     FETCH ASSIGNMENTS
-  ========================== */
   useEffect(() => {
     const fetchAssignments = async () => {
       try {
@@ -40,9 +37,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
     fetchAssignments();
   }, []);
 
-  /* ==========================
-     LOCATION
-  ========================== */
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -59,9 +53,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  /* ==========================
-     UTILS
-  ========================== */
 
   const openInMaps = (lat, lng) => {
     window.open(
@@ -112,9 +103,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
     return `All Assignments (${assignments.length})`;
   };
 
-  /* ==========================
-     RENDER
-  ========================== */
 
   if (loading) {
     return <div className="assignment-loading">Loading your assignments...</div>;
@@ -168,9 +156,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
               const startTime = new Date(`${assignment.date}T${assignment.timeSlot.start}`);
               const endTime = new Date(`${assignment.date}T${assignment.timeSlot.end}`);
 
-              /* ==========================
-                 STATUS LOGIC
-              ========================== */
               let status = "pending";
 
               if (assignment.attendanceStatus === "completed") {
@@ -198,7 +183,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
                   style={{ cursor: 'pointer' }}
                 >
 
-                  {/* HEADER */}
                   <div className="assignment-header">
 
                     <div className="assignment-title">
@@ -209,7 +193,6 @@ const AssignmentViewer = ({ setCurrentView, setSelectedAssignment }) => {
 
                   </div>
 
-                  {/* CONTENT */}
                   <div className="assignment-content">
 
                     <div className="assignment-date">

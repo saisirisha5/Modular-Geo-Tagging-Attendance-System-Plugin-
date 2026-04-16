@@ -10,10 +10,6 @@ const ManageWorkers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* =========================
-     FETCH WORKERS
-  ========================= */
-
   const fetchWorkers = async () => {
     try {
 
@@ -38,9 +34,6 @@ const ManageWorkers = () => {
     fetchWorkers();
   }, []);
 
-  /* =========================
-     DELETE WORKER
-  ========================= */
 
   const handleDelete = async (workerId) => {
 
@@ -60,17 +53,9 @@ const ManageWorkers = () => {
 
   };
 
-  /* =========================
-     LOADING STATE
-  ========================= */
-
   if (loading) {
     return <div className="loading">Loading workers...</div>;
   }
-
-  /* =========================
-     UI
-  ========================= */
 
   return (
     <div className="workers-manager">
@@ -88,7 +73,6 @@ const ManageWorkers = () => {
 
             <div key={worker.id} className="worker-card">
 
-              {/* Worker Profile Photo */}
               <div className="worker-photo">
                 <img
                   src={
@@ -100,7 +84,6 @@ const ManageWorkers = () => {
                 />
               </div>
 
-              {/* Worker Header */}
               <div className="worker-header">
 
                 <h4>{worker.name}</h4>
@@ -114,7 +97,6 @@ const ManageWorkers = () => {
 
               </div>
 
-              {/* Worker Details */}
               <div className="worker-details">
 
                 <p>

@@ -37,9 +37,6 @@ const WorkerProfile = () => {
 
   if (!user) return <div>Loading profile...</div>;
 
-  /* ========================
-     GET RESIDENCE LOCATION
-  ======================== */
 const getResidenceLocation = () => {
 
   if (!navigator.geolocation) {
@@ -84,10 +81,6 @@ const getResidenceLocation = () => {
 
 };
 
-  /* ========================
-     UPDATE PROFILE
-  ======================== */
-
   const handleUpdate = async () => {
 
     try {
@@ -124,8 +117,6 @@ const getResidenceLocation = () => {
 
   return (
     <div className="profile-container">
-
-      {/* PROFILE DETAILS */}
 
       <div className="profile-section">
 
@@ -189,8 +180,6 @@ const getResidenceLocation = () => {
 
         </div>
 
-        {/* UPDATE BUTTON BELOW FORM */}
-
         <button
           className="btn-primary"
           onClick={handleUpdate}
@@ -199,8 +188,6 @@ const getResidenceLocation = () => {
         </button>
 
       </div>
-
-      {/* RESIDENCE LOCATION */}
 
       <div className="profile-section">
 

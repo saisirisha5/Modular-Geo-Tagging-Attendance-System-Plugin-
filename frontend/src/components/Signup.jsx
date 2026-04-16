@@ -71,7 +71,6 @@ const Signup = () => {
     try {
      const data = await apiService.signup(formData);
 
-      // store session
       apiService.setUserSession(data.token, data.user);
 
       if (data.user.role === "admin") {
@@ -129,7 +128,6 @@ const Signup = () => {
               required
             >
               <option value="worker">Worker</option>
-              {/* <option value="admin">Admin</option> */}
             </select>
           </div>
 
