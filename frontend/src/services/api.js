@@ -164,6 +164,12 @@ class ApiService {
   const res = await api.delete(`/admin/workers/${id}`);
   return res.data;
 }
+
+  async getAdminAnalytics() {
+  const res = await api.get("/admin/analytics");
+  return res.data;
+}
+
   /* ---------- WORKER ---------- */
 
   async getAssignmentsForWorker() {
@@ -234,6 +240,9 @@ class ApiService {
     return res.data;
   
   }
+
+
+
 }
 
 

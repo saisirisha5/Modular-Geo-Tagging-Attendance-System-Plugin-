@@ -11,6 +11,8 @@ import {
   deleteAssignment
 } from '../controllers/admin/assignmentController.js';
 
+import { getAdminAnalytics } from '../controllers/admin/adminAnalyticsController.js';
+
 //Worker Management (Admin Handled)
 import {
   getAllWorkers,
@@ -28,6 +30,9 @@ router.get('/assignments', verifyToken, getAllAssignmentsByAdmin);
 router.get('/assignments/:id', verifyToken, getAssignmentById);
 router.put('/assignments/:id', verifyToken, updateAssignment);
 router.delete('/assignments/:id', verifyToken, deleteAssignment);
+
+//Attendance for Analytics
+router.get("/analytics", verifyToken, getAdminAnalytics);
 
 // Worker management
 router.get('/workers', verifyToken, getAllWorkers); //Assignment Creation

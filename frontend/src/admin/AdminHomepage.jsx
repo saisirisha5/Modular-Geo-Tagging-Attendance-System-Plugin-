@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import apiService from '../services/api';
 import AssignmentManager from './AssignmentManager';
 import ManageWorkers from './ManageWorkers';
+import AdminAnalytics from "./AdminAnalytics";
 import './AdminHomepage.css';
 
 const AdminHomepage = () => {
@@ -11,7 +12,7 @@ const AdminHomepage = () => {
 
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
-
+  
   useEffect(() => {
 
     const session = apiService.getUserSession();
@@ -104,6 +105,11 @@ const AdminHomepage = () => {
         </div>
       );
     }
+    if (currentView === 'analytics') {
+  return (
+    <AdminAnalytics goBack={() => setCurrentView('dashboard')} />
+  );
+}
 
   return (
     <div className="admin-container">
@@ -160,8 +166,10 @@ const AdminHomepage = () => {
 
           </div>
 
-          <div className="dashboard-card">
-
+         <div
+            className="dashboard-card"
+            onClick={() => setCurrentView('analytics')}
+          >
             <div className="card-icon">📊</div>
 
             <div className="card-content">
