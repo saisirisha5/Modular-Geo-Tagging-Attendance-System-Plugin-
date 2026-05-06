@@ -58,16 +58,21 @@ export const checkIn = async (req, res) => {
     }
 
     // Prevent multiple check-ins
-    const existing = await Attendance.findOne({
+   const existing = await Attendance.findOne({
       worker: worker.profile,
       assignment: assignmentId
     });
 
-    if (existing?.status !== 'checked-in') {
-      return res.status(409).json({ error: "Already checked-in" });
+    if (existing?.status === 'checked-in') {
+      return res.status(409).json({
+        error: "Already checked-in"
+      });
     }
+
     if (existing?.status === 'completed') {
-      return res.status(409).json({ error: "Attendance already completed" });
+      return res.status(409).json({
+        error: "Attendance already completed"
+      });
     }
 
     // CREATE / UPDATE attendance
