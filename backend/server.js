@@ -13,8 +13,8 @@ const app = express();
 
 app.use(cors({
   origin :[
-    "http://localhost:5173/",
-    "https://modular-geo-tagging-attendance-system-plugin-fk6el17di.vercel.app/"
+    "http://localhost:5173",
+    "https://modular-geo-tagging-attendance-system-plugin-fk6el17di.vercel.app"
   ],
   credentials:true
 }));
