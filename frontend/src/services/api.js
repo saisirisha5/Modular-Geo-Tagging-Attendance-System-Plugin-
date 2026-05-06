@@ -165,8 +165,10 @@ class ApiService {
   return res.data;
 }
 
-  async getAdminAnalytics() {
-  const res = await api.get("/admin/analytics");
+async getAdminAnalytics(filter = "today") {
+  const res = await api.get(
+    `/admin/analytics?filter=${filter}`
+  );
   return res.data;
 }
 

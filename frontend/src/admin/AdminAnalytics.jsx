@@ -25,21 +25,23 @@ const AdminAnalytics = ({ goBack }) => {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("today");
+  const [visibleCount, setVisibleCount] = useState(5);
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const res = await apiService.getAdminAnalytics();
-        setData(res);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    useEffect(() => {
 
-    fetchAnalytics();
-  }, []);
+      const fetchAnalytics = async () => {
+        try {
+          const res = await apiService.getAdminAnalytics(filter);
+          setData(res);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAnalytics();
+    }, [filter]);
 
   if (loading) return <div className="loading">Loading analytics...</div>;
   if (!data) return <div className="loading">Failed to load analytics</div>;
@@ -117,28 +119,23 @@ doc.save(fileName);
     alert("Failed to generate report");
   }
 };
-
   return (
     <div className="admin-container">
 
       <div className="admin-header">
         <div className="header-content">
-
           <h1 className="admin-title">📊 Admin Analytics</h1>
-
           <div className="user-info">
             <button className="back-btn" onClick={goBack}>
               ← Back
             </button>
           </div>
-
         </div>
       </div>
 
       <div className="admin-main">
 
         <div className="analytics-cards">
-
           <div className="card">
             <h3>Total Assignments</h3>
             <p>{data.summary.totalAssignments}</p>
@@ -158,7 +155,6 @@ doc.save(fileName);
             <h3>Rejected</h3>
             <p>{data.summary.rejected}</p>
           </div>
-
         </div>
 
         <div className="download-wrapper">
@@ -167,9 +163,20 @@ doc.save(fileName);
           </button>
         </div>
 
+        <div className="filter-wrapper">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="analytics-filter"
+          >
+            <option value="today">Today</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+
         <div className="chart-box">
           <h3>📈 Daily Attendance Trend</h3>
-
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -182,10 +189,8 @@ doc.save(fileName);
         </div>
 
         <div className="chart-grid">
-
           <div className="chart-box">
             <h3>📊 Attendance Status</h3>
-
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie data={pieData} dataKey="value" outerRadius={100} label>
@@ -200,7 +205,6 @@ doc.save(fileName);
 
           <div className="chart-box">
             <h3>🚨 Failure Reasons</h3>
-
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={failureData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -213,7 +217,67 @@ doc.save(fileName);
             </ResponsiveContainer>
           </div>
 
+          <div className="verification-section">
+            <h2>📸 Attendance Verification</h2>
+            <div className="verification-grid">
+              {data.recentAttendancePhotos
+                .slice(0, visibleCount)
+                .map((item) => (
+                  <div className="verification-card" key={item._id}>
+                    <div className="verification-top">
+                      <div>
+                        <h3>{item.worker?.name}</h3>
+                        <p>{item.assignment?.title}</p>
+                        <small>{item.assignment?.date}</small>
+                      </div>
+                      <div className={`verification-status ${item.status}`}>
+                        {item.status === "completed" && "✅ Attendance Marked"}
+                        {item.status === "checked-in" && "🟠 In Progress"}
+                        {item.status === "rejected" && "❌ Invalid"}
+                      </div>
+                    </div>
+
+                    <div className="photo-row">
+                      <div className="photo-box">
+                        <p>Check-In</p>
+                        {item.checkInPhoto ? (
+                          <img src={item.checkInPhoto} alt="checkin" />
+                        ) : (
+                          <div className="photo-placeholder">No Photo</div>
+                        )}
+                      </div>
+
+                      <div className="photo-box">
+                        <p>Check-Out</p>
+                        {item.checkOutPhoto ? (
+                          <img src={item.checkOutPhoto} alt="checkout" />
+                        ) : (
+                          <div className="photo-placeholder">No Photo</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {item.failureReason && (
+                      <div className="failure-box">
+                        <strong>Reason:</strong> {item.failureReason.message}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
         </div>
+
+        {visibleCount < data.recentAttendancePhotos.length && (
+          <div className="show-more-wrapper">
+            <button
+              className="show-more-btn"
+              onClick={() => setVisibleCount((prev) => prev + 5)}
+            >
+              Show More
+            </button>
+          </div>
+        )}
 
       </div>
     </div>
