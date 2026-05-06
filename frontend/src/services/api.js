@@ -172,6 +172,14 @@ async getAdminAnalytics(filter = "today") {
   return res.data;
 }
 
+async getNearestWorkers(lat, lng) {
+
+  const res = await api.get(
+    `/admin/workers/nearest?lat=${lat}&lng=${lng}`
+  );
+
+  return res.data;
+}
   /* ---------- WORKER ---------- */
 
   async getAssignmentsForWorker() {

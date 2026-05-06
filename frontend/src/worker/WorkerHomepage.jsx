@@ -16,14 +16,41 @@ const WorkerHomepage = () => {
   const [user, setUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [showResidencePrompt, setShowResidencePrompt] = useState(false);
+ 
+    useEffect(() => {
 
-  useEffect(() => {
-    const session = apiService.getUserSession();
+      const loadUser = async () => {
 
-    if (session) setUser(session.user);
-    else navigate("/login");
+        const session = apiService.getUserSession();
 
-  }, [navigate]);
+        if (!session) {
+          navigate("/login");
+          return;
+        }
+
+        setUser(session.user);
+
+        try {
+
+          const profileData =
+            await apiService.getWorkerProfile();
+
+          const location =
+            profileData?.profile?.residenceLocation;
+
+          if (!location?.lat || !location?.lng) {
+            setShowResidencePrompt(true);
+          }
+
+        } catch (err) {
+          console.error(err);
+        }
+      };
+
+      loadUser();
+
+    }, [navigate]);
 
   const handleLogout = () => {
     apiService.clearUserSession();
@@ -116,6 +143,32 @@ const WorkerHomepage = () => {
         </div>
 
         <div className="worker-main">
+          {showResidencePrompt && (
+          <div className="residence-alert">
+            <div className="residence-alert-content">
+              <div>
+                <h3>📍 Add Residence Location</h3>
+                <p>
+                  Please update your residence location
+                  for better attendance tracking.
+                </p>
+              </div>
+
+              <button
+                className="update-location-btn"
+                onClick={() => {
+                  setCurrentView("profile");
+                  setShowResidencePrompt(false);
+                }}
+              >
+                Update Now
+              </button>
+
+            </div>
+
+          </div>
+
+        )}
           <WorkerProfile />
         </div>
 

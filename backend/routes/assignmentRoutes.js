@@ -17,7 +17,8 @@ import { getAdminAnalytics } from '../controllers/admin/adminAnalyticsController
 import {
   getAllWorkers,
   getWorkerById,
-  deleteWorker
+  deleteWorker,
+  getNearestWorkers
 } from '../controllers/admin/workerManagementController.js';
 
 import verifyToken from '../middlewares/authMiddleware.js';
@@ -36,7 +37,7 @@ router.get("/analytics", verifyToken, getAdminAnalytics);
 
 // Worker management
 router.get('/workers', verifyToken, getAllWorkers); //Assignment Creation
-
+router.get('/workers/nearest', verifyToken, getNearestWorkers);
 router.get('/workers/:id', verifyToken, getWorkerById);
 router.delete('/workers/:id', verifyToken, deleteWorker);
 

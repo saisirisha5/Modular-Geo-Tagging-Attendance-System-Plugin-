@@ -262,6 +262,40 @@ select:disabled {
   font-size: 10px !important;
 }
 
+.suggested-worker {
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+.worker-label-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.distance-text {
+  color: #666;
+  font-size: 12px;
+}
+
+.suggested-badge {
+  display: inline-block;
+  width: fit-content;
+  background: linear-gradient(
+    135deg,
+    #667eea,
+    #764ba2
+  );
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .assignment-manager {

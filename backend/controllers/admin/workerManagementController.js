@@ -1,6 +1,7 @@
 import User from "../../models/userSchema.js";
 import WorkerProfile from "../../models/workerProfile.js";
 import Assignment from "../../models/assignmentSchema.js";
+import haversine from "haversine-distance";
 
 /* =====================================================
    GET /admin/workers
@@ -138,6 +139,84 @@ export const deleteWorker = async (req, res) => {
 
   } catch (err) {
     console.error("Delete Worker Error:", err);
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+  };
+
+  /* =====================================================
+   GET /admin/workers/nearest
+===================================================== */
+
+ export const getNearestWorkers = async (req, res) => {
+  try {
+
+    const adminUser = await User.findById(req.user.id);
+
+    if (!adminUser || adminUser.role !== "admin") {
+      return res.status(403).json({
+        error: "Admin access required"
+      });
+    }
+
+    const { lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({
+        error: "Latitude and longitude required"
+      });
+    }
+
+    const workers = await User.find({ role: "worker" })
+      .populate({
+        path: "profile",
+        model: "WorkerProfile"
+      });
+
+    const workersWithDistance = workers
+      .filter(worker =>
+        worker.profile?.residenceLocation?.lat &&
+        worker.profile?.residenceLocation?.lng
+      )
+      .map(worker => {
+
+        const distance = haversine(
+          {
+            lat: Number(lat),
+            lng: Number(lng)
+          },
+          {
+            lat: worker.profile.residenceLocation.lat,
+            lng: worker.profile.residenceLocation.lng
+          }
+        );
+
+        return {
+          id: worker._id,
+          name: worker.name,
+          email: worker.email,
+          profilePhoto: worker.profile?.profilePhoto || null,
+
+          distanceMeters: distance,
+          distanceKm: (distance / 1000).toFixed(2)
+        };
+      });
+
+    workersWithDistance.sort(
+      (a, b) => a.distanceMeters - b.distanceMeters
+    );
+
+    res.status(200).json({
+      count: workersWithDistance.length,
+      workers: workersWithDistance
+    });
+
+  } catch (err) {
+
+    console.error("Nearest Workers Error:", err);
+
     res.status(500).json({
       error: err.message
     });

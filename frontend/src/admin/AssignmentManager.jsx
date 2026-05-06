@@ -12,6 +12,7 @@ const AssignmentManager = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [suggestedWorkers, setSuggestedWorkers] = useState([]);
 
   const [formData, setFormData] = useState({
     workerIds: [],
@@ -143,6 +144,15 @@ const AssignmentManager = () => {
     }
   };
 
+  const fetchNearestWorkers = async (lat, lng) => {
+  try {
+    const data = await apiService.getNearestWorkers(lat, lng);
+    setSuggestedWorkers(data.workers || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading assignments...</div>;
   }
@@ -172,53 +182,29 @@ const AssignmentManager = () => {
           </h3>
 
           <form onSubmit={handleSubmit}>
-
-            {/* WORKERS */}
+   {/* TITLE */}
             <div className="form-group">
-            <label>Workers</label>
-
-            {isEditMode ? (
+              <label>Title</label>
               <input
                 type="text"
-                value={
-                  workers.find(w => w.id === formData.workerIds[0])?.name || ''
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
                 }
-                disabled
               />
-            ) : (
-              <div className="worker-checkbox-list">
-                {workers.map(worker => (
-                  <label key={worker.id} className="worker-checkbox-item">
-                    <input
-                      type="checkbox"
-                      value={worker.id}
-                      checked={formData.workerIds.includes(worker.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({
-                            ...formData,
-                            workerIds: [...formData.workerIds, worker.id]
-                          });
-                        } else {
-                          setFormData({
-                            ...formData,
-                            workerIds: formData.workerIds.filter(id => id !== worker.id)
-                          });
-                        }
-                      }}
-                    />
-                    {worker.name} ({worker.email})
-                  </label>
-                ))}
-              </div>
-            )}
+            </div>
 
-            {!isEditMode && formData.workerIds.length === 0 && (
-              <small style={{ color: '#666' }}>
-                Select at least one worker
-              </small>
-            )}
-          </div>
+            {/* DESCRIPTION */}
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
+            </div>
 
             {/* DATE */}
             <div className="form-group">
@@ -266,28 +252,7 @@ const AssignmentManager = () => {
               </div>
             </div>
 
-            {/* ADDRESS */}
-            <div className="form-group">
-              <label>Address</label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                required
-              />
-            </div>
-
-            {/* MAP */}
-            <div style={{ marginTop: '20px' }}>
-              <MapPicker
-                onLocationSelect={setSelectedLocation}
-                initialLocation={selectedLocation}
-              />
-            </div>
-
-            {/* DURATION */}
+        {/* DURATION */}
             <div className="form-group">
               <label>Duration (minutes)</label>
               <input
@@ -303,29 +268,105 @@ const AssignmentManager = () => {
               />
             </div>
 
-            {/* TITLE */}
+            {/* ADDRESS */}
             <div className="form-group">
-              <label>Title</label>
+              <label>Address</label>
               <input
                 type="text"
-                value={formData.title}
+                value={formData.address}
                 onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
+                  setFormData({ ...formData, address: e.target.value })
                 }
+                required
               />
             </div>
 
-            {/* DESCRIPTION */}
-            <div className="form-group">
-              <label>Description</label>
-              <input
-                type="text"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+            {/* MAP */}
+            <div style={{ marginTop: '20px' }}>
+             <MapPicker
+                    initialLocation={selectedLocation}
+                    onLocationSelect={(location) => {
+
+                      setSelectedLocation(location);
+
+                      fetchNearestWorkers(
+                        location.lat,
+                        location.lng
+                      );
+
+                    }}
               />
             </div>
+            
+             {/* WORKERS */}
+            <div className="form-group">
+            <label>Workers</label>
+
+            {isEditMode ? (
+              <input
+                type="text"
+                value={
+                  workers.find(w => w.id === formData.workerIds[0])?.name || ''
+                }
+                disabled
+              />
+            ) : (
+              <div className="worker-checkbox-list">
+                {(suggestedWorkers.length > 0 ? suggestedWorkers : workers
+                ).map((worker, index) => (
+                 <label
+                    key={worker.id}
+                    className={`worker-checkbox-item ${
+                      index < 3 ? "suggested-worker" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      value={worker.id}
+                      checked={formData.workerIds.includes(worker.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({
+                            ...formData,
+                            workerIds: [...formData.workerIds, worker.id]
+                          });
+                        } else {
+                          setFormData({
+                            ...formData,
+                            workerIds: formData.workerIds.filter(id => id !== worker.id)
+                          });
+                        }
+                      }}
+                    />
+                   <div className="worker-label-content">
+                    <div>
+                      {worker.name} ({worker.email})
+                    </div>
+
+                    {worker.distanceKm && (
+                      <small className="distance-text">
+                        📍 {worker.distanceKm} km away
+                      </small>
+                    )}
+
+                    {index < 3 && suggestedWorkers.length > 0 && (
+                      <span className="suggested-badge">
+                        ⭐ Suggested
+                      </span>
+                    )}
+
+                  </div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {!isEditMode && formData.workerIds.length === 0 && (
+              <small style={{ color: '#666' }}>
+                Select at least one worker
+              </small>
+            )}
+          </div>
 
             <div className="form-actions">
               <button type="submit" className="submit-btn">
