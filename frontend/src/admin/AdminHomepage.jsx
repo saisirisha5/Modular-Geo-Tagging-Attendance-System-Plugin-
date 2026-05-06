@@ -27,7 +27,7 @@ const AdminHomepage = () => {
 
   const handleLogout = () => {
     apiService.clearUserSession();
-    navigate("/login");
+    navigate("/");
   };
 
   if (!user) {

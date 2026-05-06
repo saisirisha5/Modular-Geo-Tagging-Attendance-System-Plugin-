@@ -54,7 +54,7 @@ const WorkerHomepage = () => {
 
   const handleLogout = () => {
     apiService.clearUserSession();
-    navigate("/login");
+    navigate("/");
   };
 
   if (!user) return <div className="worker-loading">Loading...</div>;

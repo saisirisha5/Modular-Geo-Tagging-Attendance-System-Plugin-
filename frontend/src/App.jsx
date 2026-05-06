@@ -5,6 +5,7 @@ import Signup from './components/Signup';
 import AdminHomepage from './admin/AdminHomepage';
 import WorkerHomepage from './worker/WorkerHomepage';
 import ProtectedRoute from './components/ProtectedRoutes';
+import HomePage from './components/HomePage';
 import './App.css';
 
 function App() {
@@ -42,8 +43,20 @@ return (
           }
         />
 
-        {/* Default Route */}
-        <Route path="*" element={<Navigate to="/login" />} />
+      <Route path="/" element={<HomePage />} />
+
+        <Route
+          path="*"
+          element={
+            token
+              ? (
+                  user?.role === "admin"
+                    ? <Navigate to="/admin" />
+                    : <Navigate to="/worker" />
+                )
+              : <Navigate to="/" />
+          }
+        />
 
       </Routes>
 
