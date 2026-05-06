@@ -7,6 +7,7 @@ import {
 } from '../controllers/worker/workerAssignmentController.js';
 import { checkIn, checkOut } from '../controllers/worker/attendanceController.js'
 import { updateWorkerProfile, updateResidenceLocation, getWorkerProfile } from "../controllers/worker/workerProfileController.js";
+import { getWorkerAnalytics } from "../controllers/worker/workerAnalyticsController.js";
 
 import { upload } from "../middlewares/multerMiddleware.js";
 import verifyToken from '../middlewares/authMiddleware.js';
@@ -32,5 +33,8 @@ router.put(
 );
 router.put("/residence-location", verifyToken, updateResidenceLocation);
 router.get("/profile", verifyToken, getWorkerProfile);
+
+//Analytics
+router.get("/analytics", verifyToken, getWorkerAnalytics);
 
 export default router; 

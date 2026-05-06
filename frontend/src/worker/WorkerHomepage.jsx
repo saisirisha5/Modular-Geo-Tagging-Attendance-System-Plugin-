@@ -4,6 +4,7 @@ import apiService from '../services/api';
 import AssignmentViewer from "./AssignmentViewer";
 import WorkerProfile from './WorkerProfile';
 import WorkerAttendancePage from "./WorkerAttendancePage";
+import WorkerAnalytics from './WorkerAnalytics';
 import './WorkerHomepage.css';
 
 const IMAGE_BASE_URL = "http://localhost:5000";
@@ -79,43 +80,10 @@ const WorkerHomepage = () => {
     );
   }
 
+
   if (currentView === 'workhistory') {
-    return (
-      <div className="worker-container">
-
-        <div className="worker-header">
-          <div className="worker-header-content">
-
-            <h1 className="worker-title">Work History</h1>
-
-            <div className="worker-user-info">
-
-              <button
-                onClick={() => setCurrentView('dashboard')}
-                className="worker-back-btn"
-              >
-                ← Back to Dashboard
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="worker-logout-btn"
-              >
-                Logout
-              </button>
-
-            </div>
-
-          </div>
-        </div>
-
-        <div className="worker-main">
-          <h2>Work analytics and attendance reports will appear here</h2>
-        </div>
-
-      </div>
-    );
-  }
+  return <WorkerAnalytics goBack={() => setCurrentView('dashboard')} />;
+}
 
   if (currentView === 'profile') {
     return (

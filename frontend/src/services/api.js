@@ -241,7 +241,10 @@ class ApiService {
   
   }
 
-
+async getWorkerAnalytics(filter = "day") {
+  const res = await api.get(`/worker/analytics?filter=${filter}`);
+  return res.data;
+}
 
 }
 
