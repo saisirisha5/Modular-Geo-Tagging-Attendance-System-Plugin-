@@ -11,13 +11,29 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({
-  origin :[
-    "http://localhost:5173",
-    "https://modular-geo-tagging-attendance-system-plugin-fk6el17di.vercel.app"
-  ],
-  credentials:true
-}));
+// Configure CORS origins from env (comma-separated) with sensible defaults
+const defaultOrigins = [
+  'http://localhost:5173',
+  'https://modular-geo-tagging-attendance-system-plugin-fk6el17di.vercel.app'
+];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || defaultOrigins.join(','))
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // allow requests with no origin (e.g., curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS policy: Origin not allowed'));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 // Routes
