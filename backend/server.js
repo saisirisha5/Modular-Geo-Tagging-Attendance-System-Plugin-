@@ -14,7 +14,7 @@ const app = express();
 // Configure CORS origins from env (comma-separated) with sensible defaults
 const defaultOrigins = [
   'http://localhost:5173',
-  'https://modular-geo-tagging-attendance-system-plugin-fk6el17di.vercel.app'
+  'https://modular-geo-tagging-attendance-syst.vercel.app'
 ];
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || defaultOrigins.join(','))
   .split(',')
