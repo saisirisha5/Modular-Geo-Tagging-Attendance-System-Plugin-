@@ -26,6 +26,10 @@ app.use('/api/admin',adminRoutes);
 app.use('/api/worker',workerRoutes);
 app.use("/uploads", express.static("uploads"));
 
+app.get('/health', (req, res) => {
+  return res.status(200).json({ status: 'ok' });
+});
+
 //connection to db and running server
 (async () => {
   try {
